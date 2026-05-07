@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 import {
   ComposedChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -10,6 +9,7 @@ import { U, fmt } from '@/lib/constants';
 
 interface CandleChartProps {
   data: any[];
+  loading?: boolean;
 }
 
 const CandleShape = (props: any) => {
@@ -30,26 +30,19 @@ const CandleShape = (props: any) => {
   );
 };
 
-export function CandleChart({ data }: CandleChartProps) {
-  const [ld, sld] = useState(data);
+export function CandleChart({ data, loading }: CandleChartProps) {
+  if (!data.length) {
+    return (
+      <div style={{ height: 340, display: 'flex', alignItems: 'center', justifyContent: 'center', color: U.textMute }}>
+        {loading ? 'Loading chart data...' : 'No data available'}
+      </div>
+    );
+  }
 
-  useEffect(() => {
-    const iv = setInterval(() => sld(prev => {
-      const last = { ...prev[prev.length - 1] };
-      const d = (Math.random() - .49) * 2, nc = +(last.close + d).toFixed(2);
-      return [...prev.slice(0, -1), {
-        ...last, close: nc,
-        high: +(Math.max(last.high, nc) + Math.random() * .5).toFixed(2),
-        low: +(Math.min(last.low, nc) - Math.random() * .5).toFixed(2), bullish: nc >= last.open
-      }];
-    }), 250);
-    return () => clearInterval(iv);
-  }, []);
-
-  const prices = ld.flatMap(d => [d.high, d.low]);
+  const prices = data.flatMap(d => [d.high, d.low]);
   const minP = Math.min(...prices) - 5, maxP = Math.max(...prices) + 5;
-  const last = ld[ld.length - 1], up = last.close >= last.open;
-  const enriched = ld.map(d => ({ ...d, mid: (d.open + d.close) / 2, minP, maxP }));
+  const last = data[data.length - 1], up = last.close >= last.open;
+  const enriched = data.map(d => ({ ...d, mid: (d.open + d.close) / 2, minP, maxP }));
 
   const TT = ({ active, payload }: any) => {
     if (!active || !payload?.length) return null;

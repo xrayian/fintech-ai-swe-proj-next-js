@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Trophy, ChevronUp, ChevronDown } from 'lucide-react';
-import { U, SCORECARD } from '@/lib/constants';
+import { U } from '@/lib/constants';
+import type { ScorecardData } from '@/lib/scorecard-utils';
 import { ScoreBadge } from '@/components/ai/score-badge';
 import { GlassCard } from '@/components/shared/glass-card';
 
@@ -14,12 +15,13 @@ interface StockSelectorProps {
   accentRgb: string;
   label: string;
   isWinner?: boolean;
+  options: Record<string, ScorecardData>;
 }
 
-export function StockSelector({ value, onChange, exclude, accent, accentRgb, label, isWinner = false }: StockSelectorProps) {
+export function StockSelector({ value, onChange, exclude, accent, accentRgb, label, isWinner = false, options }: StockSelectorProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const selected = (SCORECARD as any)[value];
+  const selected = options[value];
 
   useEffect(() => {
     const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
@@ -78,7 +80,7 @@ export function StockSelector({ value, onChange, exclude, accent, accentRgb, lab
           background: U.glass, backdropFilter: "blur(24px) saturate(150%)", borderRadius: 14, border: `1px solid ${U.borderHi}`,
           overflow: "hidden", boxShadow: `0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px ${U.border}`, animation: "fi .15s ease"
         }}>
-          {Object.entries(SCORECARD).map(([sym, d]: [string, any]) => {
+          {Object.entries(options).map(([sym, d]) => {
             const isSelected = sym === value;
             const isExcluded = sym === exclude;
             return (

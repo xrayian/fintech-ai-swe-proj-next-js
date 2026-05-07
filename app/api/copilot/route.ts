@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
   const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user');
   const entities = extractEntities(lastUserMsg?.content || '');
-  const context = buildContext(entities);
+  const context = await buildContext(entities);
 
   const contents = messages.map((m: any) => ({
     role: m.role === 'assistant' ? 'model' : 'user',

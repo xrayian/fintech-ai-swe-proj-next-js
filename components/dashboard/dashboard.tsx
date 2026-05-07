@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Globe, Activity, TrendingUp, TrendingDown } from "lucide-react";
 import { U, TICKERS, fmt } from '@/lib/constants';
@@ -12,15 +13,40 @@ const SectorHeatmap = dynamic(() => import('./sector-heatmap').then(m => m.Secto
 
 export default function Dashboard() {
   const live = useLiveTickers();
+  const [kpis, setKpis] = useState<any>(null);
+  const [kpiErr, setKpiErr] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const res = await fetch('/api/kpis');
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        if (!mounted) return;
+        setKpis(data);
+        setKpiErr(false);
+      } catch {
+        if (mounted) setKpiErr(true);
+      }
+    };
+    load();
+    const iv = setInterval(load, 30000);
+    return () => { mounted = false; clearInterval(iv); };
+  }, []);
 
   return (
     <div style={{ animation: "fi .4s ease" }}>
       <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
-        <KpiCard label="Total Market Cap" value="$47.3T" sub="+0.89% today" trend={1} accent={U.cyan} />
-        <KpiCard label="S&P 500" value="5,842.31" sub="+1.12% today" trend={1} accent={U.emerald} />
-        <KpiCard label="Fear & Greed" value="52 / 100" sub="Neutral Zone" trend={0} accent={U.amber} />
-        <KpiCard label="VIX Volatility" value="18.34" sub="−2.1 from prev" trend={-1} accent={U.rose} />
-        <KpiCard label="10Y Yield" value="4.31%" sub="+0.04% today" trend={1} accent={U.violet} />
+        {[
+          { label: "Total Market Cap", value: kpis?.marketCap || "—", accent: U.cyan },
+          { label: "S&P 500", value: kpis?.sp500 || "—", accent: U.emerald },
+          { label: "Fear & Greed", value: kpis?.fearGreed || "—", accent: U.amber },
+          { label: "VIX Volatility", value: kpis?.vix || "—", accent: U.rose },
+          { label: "10Y Yield", value: kpis?.tenYearYield ? kpis.tenYearYield + "%" : "—", accent: U.violet },
+        ].map(k => (
+          <KpiCard key={k.label} label={k.label} value={k.value} accent={k.accent} sub={kpiErr ? "Updating..." : undefined} />
+        ))}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
         <GlassCard style={{ padding: "16px 18px" }}>

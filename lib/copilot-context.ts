@@ -1,6 +1,8 @@
-import { TICKERS, SCORECARD, NEWS, SECTORS, fmt } from '@/lib/constants';
-
-const KNOWN_SYMS = new Set(TICKERS.map(t => t.sym));
+import {
+  fetchFundamentals, fetchQuote, fetchNews, fetchSectors,
+} from '@/lib/providers/orchestrator';
+import { DEFAULT_SYMBOLS } from '@/lib/providers/types';
+import type { NormalizedFundamentals } from '@/lib/providers/types';
 
 export interface Entities {
   tickers: string[];
@@ -9,9 +11,7 @@ export interface Entities {
 
 export function extractEntities(msg: string): Entities {
   const upper = msg.toUpperCase();
-  const tickers = TICKERS
-    .map(t => t.sym)
-    .filter(sym => new RegExp(`\\b${sym}\\b`).test(upper));
+  const tickers = DEFAULT_SYMBOLS.filter(sym => new RegExp(`\\b${sym}\\b`).test(upper));
 
   const intent: Entities['intent'] =
     /\b(compare|vs\.?|versus|difference|better|which)\b/i.test(msg) ? 'compare' :
@@ -22,50 +22,80 @@ export function extractEntities(msg: string): Entities {
   return { tickers: [...new Set(tickers)], intent };
 }
 
-export function buildContext(entities: Entities): string {
+function fundamentalsLine(sym: string, f: NormalizedFundamentals): string {
+  const score = f.score ? `${f.score}/10` : 'N/A';
+  const verdict = f.verdict || 'N/A';
+  const tag = f.tag || 'N/A';
+  return `${f.name || sym} (${sym}): Score ${score} · ${verdict} · ${tag} | P/E ${f.peRatio.toFixed(1)}× · ROE ${(f.roe * 100).toFixed(1)}% · CAGR +${(f.revenueCagr * 100).toFixed(1)}% · Margin ${(f.netMargin * 100).toFixed(1)}% · D/E ${f.debtEquity.toFixed(2)}`;
+}
+
+function priceLine(sym: string, q: { price: number; change: number; changePercent: number }): string {
+  return `${sym}: $${q.price.toFixed(2)} · ${q.change >= 0 ? '+' : ''}${q.change.toFixed(2)} (${q.changePercent >= 0 ? '+' : ''}${q.changePercent.toFixed(2)}%)`;
+}
+
+export async function buildContext(entities: Entities): Promise<string> {
   const { tickers, intent } = entities;
   const parts: string[] = [SYSTEM_PERSONA];
+  const dataParts: string[] = [];
 
   if (tickers.length > 0) {
-    const scoreSection = tickers
-      .filter(sym => SCORECARD[sym as keyof typeof SCORECARD])
-      .map(sym => {
-        const d = SCORECARD[sym as keyof typeof SCORECARD];
-        return `${d.name} (${sym}): Score ${d.score}/10 · ${d.verdict} · ${d.tag} | P/E ${d.pe}× · ROE ${fmt(d.roe)}% · CAGR +${d.cagr}% · Margin ${d.margin}% · D/E ${d.de}`;
-      });
-    if (scoreSection.length) {
-      parts.push('--- SCORECARD DATA ---\n' + scoreSection.join('\n'));
+    const [fundamentals, quotes] = await Promise.all([
+      Promise.allSettled(tickers.map(s => fetchFundamentals(s))),
+      Promise.allSettled(tickers.map(s => fetchQuote([s]).then(q => q[0] || null))),
+    ]);
+
+    const fundLines: string[] = [];
+    for (const [i, sym] of tickers.entries()) {
+      const r = fundamentals[i];
+      if (r.status === 'fulfilled' && r.value) {
+        fundLines.push(fundamentalsLine(sym, r.value));
+      }
+    }
+    if (fundLines.length) {
+      dataParts.push('--- FUNDAMENTALS ---\n' + fundLines.join('\n'));
     }
 
-    const priceSection = tickers
-      .map(sym => {
-        const t = TICKERS.find(t => t.sym === sym);
-        return t ? `${t.sym} (${t.name}): $${t.price} · ${t.chg >= 0 ? '+' : ''}${t.chg} (${t.pct >= 0 ? '+' : ''}${t.pct}%)` : null;
-      })
-      .filter(Boolean);
-    if (priceSection.length) {
-      parts.push('--- PRICE DATA ---\n' + priceSection.join('\n'));
+    const priceLines: string[] = [];
+    for (const [i, sym] of tickers.entries()) {
+      const r = quotes[i];
+      if (r.status === 'fulfilled' && r.value) {
+        priceLines.push(priceLine(sym, r.value));
+      }
+    }
+    if (priceLines.length) {
+      dataParts.push('--- PRICE DATA ---\n' + priceLines.join('\n'));
     }
   }
 
   if (intent === 'compare' && tickers.length >= 2) {
-    parts.push('When comparing, highlight relative strengths, risk profiles, and which suits different investment styles.');
+    dataParts.push('When comparing, highlight relative strengths, risk profiles, and which suits different investment styles.');
   }
 
   if (intent === 'news') {
-    const newsBlock = NEWS.map(n =>
-      `[${n.region}] ${n.headline} (${n.source}, ${n.time}) — Fear: ${n.fear}/100 · Sentiment: ${n.sentiment}`
-    ).join('\n');
-    parts.push('--- NEWS & SENTIMENT ---\n' + newsBlock);
+    try {
+      const news = await fetchNews(tickers.length > 0 ? tickers : DEFAULT_SYMBOLS);
+      if (news.length > 0) {
+        const newsBlock = news.map(n =>
+          `[${n.sentiment}] ${n.headline} (${n.source}) — Fear: ${n.fearScore}/100`
+        ).join('\n');
+        dataParts.push('--- NEWS & SENTIMENT ---\n' + newsBlock);
+      }
+    } catch {}
   }
 
   if (intent === 'sector' || tickers.length === 0) {
-    const sectorBlock = SECTORS.map(s =>
-      `${s.name}: ${s.value}% of market · ${s.chg >= 0 ? '+' : ''}${s.chg}%`
-    ).join('\n');
-    parts.push('--- SECTOR WEIGHTS ---\n' + sectorBlock);
+    try {
+      const sectors = await fetchSectors();
+      if (sectors.length > 0) {
+        const sectorBlock = sectors.map(s =>
+          `${s.name}: ${s.chg >= 0 ? '+' : ''}${s.chg.toFixed(2)}%`
+        ).join('\n');
+        dataParts.push('--- SECTOR DATA ---\n' + sectorBlock);
+      }
+    } catch {}
   }
 
+  parts.push(dataParts.join('\n\n'));
   return parts.join('\n\n');
 }
 

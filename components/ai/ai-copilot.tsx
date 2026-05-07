@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Sparkles, Bot, Send, Star, ChevronDown, ChevronRight, X, Lightbulb } from 'lucide-react';
 import { U, SCORECARD, QUICK_PROMPTS } from '@/lib/constants';
+import { computeScorecard, type ScorecardData } from '@/lib/scorecard-utils';
+import type { NormalizedFundamentals } from '@/lib/providers/types';
+import { DEFAULT_SYMBOLS } from '@/lib/providers/types';
 import { ScoreCard } from './score-card';
 
 type Message = {
@@ -10,7 +13,7 @@ type Message = {
   content: string;
 };
 
-const AI_INIT: Message[] = [{ role: "assistant", content: "**Good morning.** I'm your AI Copilot for market intelligence. I've analyzed 847 data points since market open.\n\n**Today's quick pulse:**\n- Risk-On sentiment detected across tech and growth sectors\n- **NVDA** showing breakout volume — 2.3× daily average\n- Caution: Elevated fear index in Asia-Pacific markets\n\nAsk me anything — *\"Is AAPL wise to invest now?\"* or *\"Compare MSFT vs GOOGL\"*" }];
+const AI_INIT: Message[] = [{ role: "assistant", content: "**Welcome.** I'm your AI Copilot for market intelligence. I can analyze stocks using live fundamental data — ask about valuations, compare tickers, or explore market sectors.\n\n**Try asking:**\n- *\"Is AAPL wise to invest now?\"*\n- *\"Compare MSFT vs GOOGL\"*\n- *\"What's the risk on TSLA?\"*" }];
 
 export default function AICopilot() {
   const [msgs, sm] = useState<Message[]>(AI_INIT);
@@ -19,8 +22,31 @@ export default function AICopilot() {
   const [exp, se] = useState<string | null>(null);
   const [inputFocus, sif] = useState(false);
   const [streamBuf, sst] = useState("");
+  const [fundamentalsMap, setFundamentalsMap] = useState<Record<string, NormalizedFundamentals>>({});
   const bot = useRef<HTMLDivElement>(null);
   const inpRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    fetch(`/api/fundamentals?symbols=${DEFAULT_SYMBOLS.join(',')}`)
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        const map: Record<string, NormalizedFundamentals> = {};
+        for (const item of (Array.isArray(data) ? data : [])) {
+          if (item.symbol) map[item.symbol] = item;
+        }
+        if (Object.keys(map).length > 0) setFundamentalsMap(map);
+      })
+      .catch(() => {});
+  }, []);
+
+  const scorecardMap = useMemo(() => {
+    const map: Record<string, ScorecardData> = {};
+    for (const [sym, f] of Object.entries(fundamentalsMap)) {
+      map[sym] = computeScorecard(f);
+    }
+    if (Object.keys(map).length === 0) return SCORECARD as unknown as Record<string, ScorecardData>;
+    return map;
+  }, [fundamentalsMap]);
 
   useEffect(() => { bot.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
 
@@ -112,7 +138,7 @@ export default function AICopilot() {
           <div style={{ fontSize: 11, color: U.textFaint }}>AI-scored investment signals</div>
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "12px 12px" }}>
-          {Object.entries(SCORECARD).map(([sym, d]) => (
+          {Object.entries(scorecardMap).map(([sym, d]) => (
             <ScoreCard key={sym} ticker={sym} data={d} expanded={exp === sym} onToggle={() => se(exp === sym ? null : sym)} />
           ))}
         </div>

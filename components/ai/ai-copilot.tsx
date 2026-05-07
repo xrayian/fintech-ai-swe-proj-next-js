@@ -18,6 +18,7 @@ export default function AICopilot() {
   const [loading, sl] = useState(false);
   const [exp, se] = useState<string | null>(null);
   const [inputFocus, sif] = useState(false);
+  const [streamBuf, sst] = useState("");
   const bot = useRef<HTMLDivElement>(null);
   const inpRef = useRef<HTMLTextAreaElement>(null);
 
@@ -27,14 +28,55 @@ export default function AICopilot() {
     const text = overrideText ?? inp;
     if (!text.trim() || loading) return;
     const um = { role: "user" as const, content: text };
-    sm(p => [...p, um]); si(""); sl(true);
-    
-    // Simulation of AI response as external API might not be available or need key
-    setTimeout(() => {
-        const response = "I've analyzed the current market data. Based on **fundamental metrics** and **sentiment analysis**, this asset shows a strong profile. The current P/E ratio is aligned with historical averages, while ROE continues to outperform sector peers.";
-        sm(p => [...p, { role: "assistant" as const, content: response }]);
-        sl(false);
-    }, 1500);
+    sm(p => [...p, um]); si(""); sl(true); sst("");
+
+    try {
+      const res = await fetch('/api/copilot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [...msgs, um] }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || `API error ${res.status}`);
+      }
+
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let acc = "";
+      let buf = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+
+        const lines = buf.split('\n');
+        buf = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const json = line.slice(6).trim();
+          if (json === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(json);
+            const chunk = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (chunk) {
+              acc += chunk;
+              sst(acc);
+            }
+          } catch { /* skip malformed chunks */ }
+        }
+      }
+
+      sm(p => [...p, { role: "assistant", content: acc }]);
+      sst("");
+    } catch (err) {
+      const errMsg = `Sorry, I encountered an error: ${err instanceof Error ? err.message : 'Unknown error'}`;
+      sm(p => [...p, { role: "assistant", content: errMsg }]);
+    } finally {
+      sl(false);
+    }
   }, [inp, loading, msgs]);
 
   const clearChat = () => { sm(AI_INIT); };
@@ -161,7 +203,13 @@ export default function AICopilot() {
               }} dangerouslySetInnerHTML={{ __html: md(m.content) }} />
             </div>
           ))}
-          {loading && (
+          {loading && streamBuf && (
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, animation: "fi .2s ease" }}>
+              <div style={{ width: 28, height: 28, background: `linear-gradient(135deg,${U.cyan},${U.violet})`, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><Bot size={12} color="#0a0a0f" /></div>
+              <div style={{ maxWidth: "72%", padding: "11px 15px", fontSize: 13, lineHeight: 1.7, color: U.text, borderRadius: "4px 16px 16px 16px", background: `linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04))`, border: "1px solid rgba(167,139,250,0.18)", backdropFilter: "blur(10px)", boxShadow: `0 2px 16px rgba(0,0,0,0.3)` }} dangerouslySetInnerHTML={{ __html: md(streamBuf) }} />
+            </div>
+          )}
+          {loading && !streamBuf && (
             <div style={{ display: "flex", alignItems: "flex-start", gap: 10, animation: "fi .2s ease" }}>
               <div style={{ width: 28, height: 28, background: `linear-gradient(135deg,${U.cyan},${U.violet})`, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><Bot size={12} color="#0a0a0f" /></div>
               <div style={{ padding: "13px 18px", background: `linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04))`, border: "1px solid rgba(167,139,250,0.18)", borderRadius: "4px 16px 16px 16px", display: "flex", alignItems: "center", gap: 5 }}>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { BarChart2, Trophy, BarChart3, Zap, AlertTriangle, TrendingUp, RefreshCw } from 'lucide-react';
 import {
   RadarChart, Radar, PolarGrid,
@@ -13,7 +13,9 @@ import { StockSelector } from './stock-selector';
 import { SectionTitle } from '@/components/shared/section-title';
 import { GlassCard } from '@/components/shared/glass-card';
 import { ErrorMessage } from '@/components/shared/error-message';
-import { DEFAULT_SYMBOLS } from '@/lib/providers/types';
+import { SP500_TOP100 } from '@/lib/symbols/sp500-top100';
+
+const COMPARE_DEFAULTS = SP500_TOP100.slice(0, 8).map(s => s.sym);
 
 function MainContent({ symA, symB, onChangeA, onChangeB, scorecardMap, mounted, fetchData }: {
   symA: string; symB: string;
@@ -69,19 +71,6 @@ function MainContent({ symA, symB, onChangeA, onChangeB, scorecardMap, mounted, 
 
   return (
     <>
-      <div style={{ marginBottom: 16 }}>
-        <SectionTitle icon={BarChart2}>Select two stocks to compare</SectionTitle>
-        <div style={{ display: "flex", gap: 12, alignItems: "flex-start", position: "relative" }}>
-          <StockSelector value={symA} onChange={onChangeA} exclude={symB} accent={U.cyan} accentRgb="34,211,238" label="Stock A" isWinner={winner === symA} options={scorecardMap} />
-          <div style={{
-            flexShrink: 0, alignSelf: "center", width: 36, height: 36, borderRadius: "50%",
-            background: U.glass, border: `1px solid ${U.borderHi}`, backdropFilter: "blur(12px)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 11, fontWeight: 800, color: U.textMute
-          }}>VS</div>
-          <StockSelector value={symB} onChange={onChangeB} exclude={symA} accent={U.violet} accentRgb="167,139,250" label="Stock B" isWinner={winner === symB} options={scorecardMap} />
-        </div>
-      </div>
 
       <GlassCard style={{
         padding: "14px 18px", marginBottom: 14,
@@ -211,40 +200,70 @@ function MainContent({ symA, symB, onChangeA, onChangeB, scorecardMap, mounted, 
   );
 }
 
-export default function CompareAnalytics() {
+export default function CompareAnalytics({ initialSymbol }: { initialSymbol?: string }) {
+  const initialSym = initialSymbol || "AAPL";
   const [mounted, setMounted] = useState(false);
-  const [symA, setSymA] = useState("AAPL");
-  const [symB, setSymB] = useState("MSFT");
+  const [symA, setSymA] = useState(initialSym);
+  const [symB, setSymB] = useState(initialSym === "AAPL" ? "MSFT" : "AAPL");
   const [fundamentalsMap, setFundamentalsMap] = useState<Record<string, NormalizedFundamentals>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const mountedRef = useRef(true);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => { setMounted(true); mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
 
-  const fetchData = useCallback(async () => {
+  const loadSymbols = useCallback(async (symbols: string[]) => {
     setError(null);
     setLoading(true);
+    const unique = [...new Set([...COMPARE_DEFAULTS, ...symbols])];
     try {
-      const res = await fetch(`/api/fundamentals?symbols=${DEFAULT_SYMBOLS.join(',')}`);
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Failed to load fundamental data' }));
-        throw new Error(err.error || 'Failed to load fundamental data');
-      }
+      const res = await fetch(`/api/fundamentals?symbols=${unique.join(',')}`);
+      if (!res.ok) throw new Error('Failed to load fundamental data');
       const data: NormalizedFundamentals[] = await res.json();
+      if (!mountedRef.current) return;
       const map: Record<string, NormalizedFundamentals> = {};
       for (const item of data) {
         if (item.symbol) map[item.symbol] = item;
       }
       if (Object.keys(map).length === 0) throw new Error('No fundamental data available');
-      setFundamentalsMap(map);
+      setFundamentalsMap(prev => Object.keys(prev).length ? prev : map);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error');
+      if (mountedRef.current) setError(e instanceof Error ? e.message : 'Unknown error');
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    loadSymbols([symA, symB]);
+  }, []);
+
+  const retry = useCallback(() => {
+    loadSymbols([symA, symB]);
+  }, [symA, symB]);
+
+  const fetchSym = useCallback(async (sym: string) => {
+    try {
+      const res = await fetch(`/api/fundamentals?symbol=${sym}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.symbol) setFundamentalsMap(prev => {
+          if (prev[data.symbol]) return prev;
+          return { ...prev, [data.symbol]: data };
+        });
+      }
+    } catch {}
+  }, []);
+
+  const handleChangeA = useCallback((sym: string) => {
+    setSymA(sym);
+    fetchSym(sym);
+  }, [fetchSym]);
+
+  const handleChangeB = useCallback((sym: string) => {
+    setSymB(sym);
+    fetchSym(sym);
+  }, [fetchSym]);
 
   const scorecardMap = useMemo(() => {
     const map: Record<string, ScorecardData> = {};
@@ -255,42 +274,39 @@ export default function CompareAnalytics() {
     return map;
   }, [fundamentalsMap]);
 
+  const hasData = scorecardMap[symA] && scorecardMap[symB];
+
   return (
     <div style={{ animation: "fi .25s ease" }}>
-      {error ? (
-        <div>
-          <div style={{ marginBottom: 16 }}>
-            <SectionTitle icon={BarChart2}>Select two stocks to compare</SectionTitle>
-            <div style={{ display: "flex", gap: 12, alignItems: "flex-start", position: "relative" }}>
-              <StockSelector value={symA} onChange={setSymA} exclude={symB} accent={U.cyan} accentRgb="34,211,238" label="Stock A" isWinner={false} options={SCORECARD as unknown as Record<string, ScorecardData>} />
-              <div style={{ flexShrink: 0, alignSelf: "center", width: 36, height: 36, borderRadius: "50%", background: U.glass, border: `1px solid ${U.borderHi}`, backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: U.textMute }}>VS</div>
-              <StockSelector value={symB} onChange={setSymB} exclude={symA} accent={U.violet} accentRgb="167,139,250" label="Stock B" isWinner={false} options={SCORECARD as unknown as Record<string, ScorecardData>} />
-            </div>
-          </div>
-          <ErrorMessage message={error} onRetry={fetchData} />
+      <div style={{ marginBottom: 16 }}>
+        <SectionTitle icon={BarChart2}>Select two stocks to compare</SectionTitle>
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-start", position: "relative" }}>
+          <StockSelector value={symA} onChange={handleChangeA} exclude={symB} accent={U.cyan} accentRgb="34,211,238" label="Stock A" isWinner={!!hasData && (scorecardMap[symA]?.score ?? 0) >= (scorecardMap[symB]?.score ?? 0)} options={scorecardMap} />
+          <div style={{ flexShrink: 0, alignSelf: "center", width: 36, height: 36, borderRadius: "50%", background: U.glass, border: `1px solid ${U.borderHi}`, backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: U.textMute }}>VS</div>
+          <StockSelector value={symB} onChange={handleChangeB} exclude={symA} accent={U.violet} accentRgb="167,139,250" label="Stock B" isWinner={!!hasData && (scorecardMap[symB]?.score ?? 0) >= (scorecardMap[symA]?.score ?? 0)} options={scorecardMap} />
         </div>
-      ) : loading || !scorecardMap[symA] || !scorecardMap[symB] ? (
-        <div>
-          <div style={{ marginBottom: 16 }}>
-            <SectionTitle icon={BarChart2}>Select two stocks to compare</SectionTitle>
-            <div style={{ display: "flex", gap: 12, alignItems: "flex-start", position: "relative" }}>
-              <StockSelector value={symA} onChange={setSymA} exclude={symB} accent={U.cyan} accentRgb="34,211,238" label="Stock A" isWinner={false} options={scorecardMap} />
-              <div style={{ flexShrink: 0, alignSelf: "center", width: 36, height: 36, borderRadius: "50%", background: U.glass, border: `1px solid ${U.borderHi}`, backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: U.textMute }}>VS</div>
-              <StockSelector value={symB} onChange={setSymB} exclude={symA} accent={U.violet} accentRgb="167,139,250" label="Stock B" isWinner={false} options={scorecardMap} />
-            </div>
-          </div>
-          <GlassCard style={{ padding: "40px", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>
-            <RefreshCw size={24} color={U.textMute} style={{ animation: "spin .8s linear infinite" }} />
-            <span style={{ color: U.textMute, fontSize: 13 }}>Loading fundamental data from live sources...</span>
-          </GlassCard>
+      </div>
+
+      {error && !hasData && (
+        <div style={{ marginBottom: 14 }}>
+          <ErrorMessage message={error} onRetry={retry} />
         </div>
-      ) : (
+      )}
+
+      {!hasData && !error && (
+        <GlassCard style={{ padding: "40px", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>
+          <RefreshCw size={24} color={U.textMute} style={{ animation: "spin .8s linear infinite" }} />
+          <span style={{ color: U.textMute, fontSize: 13 }}>Loading fundamental data from live sources...</span>
+        </GlassCard>
+      )}
+
+      {hasData && (
         <MainContent
           symA={symA} symB={symB}
-          onChangeA={setSymA} onChangeB={setSymB}
+          onChangeA={handleChangeA} onChangeB={handleChangeB}
           scorecardMap={scorecardMap}
           mounted={mounted}
-          fetchData={fetchData}
+          fetchData={retry}
         />
       )}
     </div>

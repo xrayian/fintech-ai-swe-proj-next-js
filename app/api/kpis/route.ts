@@ -1,5 +1,7 @@
 import { fetchKpis, fetchFundamentals, fetchNews } from '@/lib/providers/orchestrator';
-import { DEFAULT_SYMBOLS } from '@/lib/providers/types';
+import { SP500_TOP100 } from '@/lib/symbols/sp500-top100';
+
+const DEFAULTS = SP500_TOP100.slice(0, 8).map(s => s.sym);
 
 function fmtMarketCap(n: number): string {
   if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}T`;
@@ -11,8 +13,8 @@ export async function GET() {
   try {
     const [kpiData, fundamentalsResults, news] = await Promise.all([
       fetchKpis(),
-      Promise.allSettled(DEFAULT_SYMBOLS.map(s => fetchFundamentals(s))),
-      fetchNews(DEFAULT_SYMBOLS).catch(() => [] as any[]),
+      Promise.allSettled(DEFAULTS.map(s => fetchFundamentals(s))),
+      fetchNews(DEFAULTS).catch(() => [] as any[]),
     ]);
 
     let totalMarketCap = 0;

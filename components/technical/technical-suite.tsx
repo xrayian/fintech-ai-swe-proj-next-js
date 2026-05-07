@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { Circle, AlertTriangle } from 'lucide-react';
-import { U, TICKERS } from '@/lib/constants';
+import { Circle, AlertTriangle, Search as SearchIcon, X } from 'lucide-react';
+import { U } from '@/lib/constants';
 import { Chip } from '@/components/shared/chip';
 import { GlassCard } from '@/components/shared/glass-card';
 import { ErrorMessage } from '@/components/shared/error-message';
+import { useWatchlist } from '@/hooks/use-watchlist';
 
 const CandleChart = dynamic(() => import('./candle-chart').then(m => m.CandleChart), {
   ssr: false,
@@ -80,7 +81,33 @@ function computeIndicators(candles: { open: number; high: number; low: number; c
 }
 
 export default function TechnicalSuite() {
-  const [sel, setSel] = useState("AAPL");
+  const { watchlist } = useWatchlist();
+  const [sel, setSel] = useState(() => watchlist[0]?.sym || "AAPL");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<{ sym: string; name: string }[]>([]);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) { setSearchResults([]); return; }
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/symbols?q=${encodeURIComponent(searchQuery)}`);
+        if (!res.ok) return;
+        setSearchResults(await res.json());
+      } catch {}
+    }, 200);
+  }, [searchQuery]);
   const [tf, setTf] = useState("1M");
   const [candles, setCandles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -172,7 +199,46 @@ export default function TechnicalSuite() {
   return (
     <div style={{ animation: "fi .4s ease" }}>
       <div style={{ display: "flex", gap: 7, marginBottom: 14, flexWrap: "wrap", alignItems: "center" }}>
-        {TICKERS.slice(0, 6).map(t => <Chip key={t.sym} label={t.sym} active={sel === t.sym} onClick={() => setSel(t.sym)} />)}
+        {watchlist.slice(0, 6).map(t => <Chip key={t.sym} label={t.sym} active={sel === t.sym} onClick={() => setSel(t.sym)} />)}
+        <div ref={searchRef} style={{ position: "relative" }}>
+          <button onClick={() => setSearchOpen(!searchOpen)} style={{
+            padding: "6px 12px", borderRadius: 999, border: `1px solid ${searchOpen ? U.cyan : U.border}`,
+            background: searchOpen ? U.cyanSoft : U.glassLo, color: searchOpen ? U.cyan : U.textDim,
+            fontSize: 11, fontWeight: 600, cursor: "pointer", transition: "all .15s",
+            display: "flex", alignItems: "center", gap: 5
+          }}><SearchIcon size={11} /> Search</button>
+          {searchOpen && (
+            <div style={{
+              position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 100, width: 240,
+              background: "rgba(10,10,15,0.96)", backdropFilter: "blur(24px)", borderRadius: 12,
+              border: `1px solid ${U.borderHi}`, overflow: "hidden", boxShadow: "0 12px 40px rgba(0,0,0,0.5)"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderBottom: `1px solid ${U.border}` }}>
+                <SearchIcon size={13} color={U.textMute} />
+                <input autoFocus value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Type a symbol..."
+                  style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: U.text, fontSize: 12 }}
+                />
+                {searchQuery && <X size={13} color={U.textMute} style={{ cursor: "pointer" }} onClick={() => { setSearchQuery(''); setSearchResults([]); }} />}
+              </div>
+              <div style={{ maxHeight: 200, overflow: "auto" }}>
+                {searchResults.slice(0, 10).map(r => (
+                  <div key={r.sym} onClick={() => { setSel(r.sym); setSearchOpen(false); setSearchQuery(''); setSearchResults([]); }}
+                    style={{ padding: "9px 12px", cursor: "pointer", borderBottom: `1px solid ${U.border}`, display: "flex", alignItems: "center", gap: 8 }}
+                    onMouseEnter={e => (e.currentTarget.style.background = U.glass)}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  >
+                    <span style={{ fontSize: 12, fontWeight: 700, color: U.text }}>{r.sym}</span>
+                    <span style={{ fontSize: 10, color: U.textMute, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
+                  </div>
+                ))}
+                {searchQuery && !searchResults.length && (
+                  <div style={{ padding: "16px", textAlign: "center", fontSize: 11, color: U.textMute }}>No matches</div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 5 }}>
           {["1D", "1W", "1M", "3M", "1Y"].map(t => <Chip key={t} label={t} active={tf === t} onClick={() => setTf(t)} />)}
         </div>

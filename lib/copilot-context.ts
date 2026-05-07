@@ -1,8 +1,10 @@
 import {
   fetchFundamentals, fetchQuote, fetchNews, fetchSectors,
 } from '@/lib/providers/orchestrator';
-import { DEFAULT_SYMBOLS } from '@/lib/providers/types';
+import { SP500_TOP100 } from '@/lib/symbols/sp500-top100';
 import type { NormalizedFundamentals } from '@/lib/providers/types';
+
+const ENTITY_SYMBOLS = SP500_TOP100.slice(0, 50).map(s => s.sym);
 
 export interface Entities {
   tickers: string[];
@@ -11,7 +13,7 @@ export interface Entities {
 
 export function extractEntities(msg: string): Entities {
   const upper = msg.toUpperCase();
-  const tickers = DEFAULT_SYMBOLS.filter(sym => new RegExp(`\\b${sym}\\b`).test(upper));
+  const tickers = ENTITY_SYMBOLS.filter(sym => new RegExp(`\\b${sym}\\b`).test(upper));
 
   const intent: Entities['intent'] =
     /\b(compare|vs\.?|versus|difference|better|which)\b/i.test(msg) ? 'compare' :
@@ -73,7 +75,7 @@ export async function buildContext(entities: Entities): Promise<string> {
 
   if (intent === 'news') {
     try {
-      const news = await fetchNews(tickers.length > 0 ? tickers : DEFAULT_SYMBOLS);
+      const news = await fetchNews(tickers.length > 0 ? tickers : ENTITY_SYMBOLS);
       if (news.length > 0) {
         const newsBlock = news.map(n =>
           `[${n.sentiment}] ${n.headline} (${n.source}) — Fear: ${n.fearScore}/100`

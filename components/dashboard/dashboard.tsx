@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Globe, Activity, TrendingUp, TrendingDown } from "lucide-react";
-import { U, TICKERS, fmt } from '@/lib/constants';
+import { U, fmt } from '@/lib/constants';
 import { useLiveTickers } from '@/hooks/use-live-tickers';
 import { KpiCard } from './kpi-card';
 import { SectionTitle } from '@/components/shared/section-title';
@@ -56,7 +56,7 @@ export default function Dashboard() {
         <GlassCard style={{ padding: "16px 18px" }}>
           <SectionTitle icon={Activity}>Top Movers</SectionTitle>
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            {[...TICKERS].sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct)).slice(0, 6).map(t => {
+            {Object.values(live).sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct)).slice(0, 6).map(t => {
               const l = live[t.sym] || t;
               const up = l.pct >= 0;
               return (

@@ -1,17 +1,33 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Server, Palette, CheckCircle, XCircle } from 'lucide-react';
+import { Settings as SettingsIcon, Server, Palette, CheckCircle, XCircle, BookmarkPlus, Trash2, Plus } from 'lucide-react';
 import { U } from '@/lib/constants';
 import { GlassCard } from '@/components/shared/glass-card';
 import { SectionTitle } from '@/components/shared/section-title';
+import { useWatchlist } from '@/hooks/use-watchlist';
 
 export default function SettingsPage() {
   const [conn, setConn] = useState<Record<string, boolean>>({});
+  const { watchlist, addSymbol, removeSymbol, ready } = useWatchlist();
+  const [addQuery, setAddQuery] = useState('');
+  const [addResults, setAddResults] = useState<{ sym: string; name: string }[]>([]);
 
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then(setConn).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!addQuery.trim()) { setAddResults([]); return; }
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/symbols?q=${encodeURIComponent(addQuery)}`);
+        if (!res.ok) return;
+        setAddResults(await res.json());
+      } catch {}
+    }, 200);
+    return () => clearTimeout(t);
+  }, [addQuery]);
 
   const connections = [
     { name: 'Finnhub', ok: conn.finnhub, label: 'Market data (primary)' },
@@ -22,6 +38,54 @@ export default function SettingsPage() {
   return (
     <div style={{ animation: "fi .4s ease", maxWidth: 640 }}>
       <SectionTitle icon={SettingsIcon}>Settings</SectionTitle>
+
+      <GlassCard style={{ padding: "20px 22px", marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+          <div style={{ width: 34, height: 34, borderRadius: 10, background: U.cyanSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <BookmarkPlus size={16} color={U.cyan} />
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: U.text }}>Watchlist</div>
+            <div style={{ fontSize: 10, color: U.textMute }}>{watchlist.length} symbols tracked</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <input value={addQuery} onChange={e => setAddQuery(e.target.value)}
+            placeholder="Search to add a symbol..."
+            style={{ flex: 1, background: U.glassLo, border: `1px solid ${U.border}`, borderRadius: 10, padding: "8px 12px", color: U.text, fontSize: 12, outline: "none" }}
+          />
+        </div>
+        {addQuery && (
+          <div style={{ marginBottom: 12, maxHeight: 160, overflow: "auto", background: U.glassLo, borderRadius: 10, border: `1px solid ${U.border}` }}>
+            {addResults.map(r => (
+              <div key={r.sym} onClick={() => { addSymbol(r.sym, r.name); setAddQuery(''); setAddResults([]); }}
+                style={{ padding: "8px 12px", cursor: "pointer", borderBottom: `1px solid ${U.border}`, display: "flex", alignItems: "center", gap: 8 }}
+                onMouseEnter={e => (e.currentTarget.style.background = U.glass)}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              >
+                <Plus size={12} color={U.emerald} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: U.text }}>{r.sym}</span>
+                <span style={{ fontSize: 10, color: U.textMute }}>{r.name}</span>
+              </div>
+            ))}
+            {addQuery && !addResults.length && <div style={{ padding: 12, textAlign: "center", fontSize: 11, color: U.textMute }}>No matches</div>}
+          </div>
+        )}
+        {ready && watchlist.slice(0, 12).map(s => (
+          <div key={s.sym} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: `1px solid ${U.border}` }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: U.text, width: 52 }}>{s.sym}</span>
+            <span style={{ fontSize: 11, color: U.textMute, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</span>
+            <button onClick={() => removeSymbol(s.sym)} style={{ background: "transparent", border: "none", cursor: "pointer", color: U.textFaint, padding: 4 }}>
+              <Trash2 size={12} />
+            </button>
+          </div>
+        ))}
+        {ready && watchlist.length > 12 && (
+          <div style={{ fontSize: 10, color: U.textMute, textAlign: "center", padding: "8px 0" }}>
+            +{watchlist.length - 12} more symbols
+          </div>
+        )}
+      </GlassCard>
 
       <GlassCard style={{ padding: "20px 22px", marginBottom: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>

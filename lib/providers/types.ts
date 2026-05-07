@@ -68,4 +68,4 @@ export interface NormalizedSector {
   chg: number;
 }
 
-export const DEFAULT_SYMBOLS = ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'GOOGL', 'AMZN', 'META', 'NFLX'];
+

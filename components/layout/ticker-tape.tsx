@@ -1,11 +1,12 @@
 'use client';
 
-import { U, TICKERS, fmt } from '@/lib/constants';
+import { U, fmt } from '@/lib/constants';
 import { useLiveTickers } from '@/hooks/use-live-tickers';
 
 export function TickerTape() {
   const live = useLiveTickers();
-  const items = [...TICKERS, ...TICKERS];
+  const vals = Object.values(live);
+  const items = vals.length ? [...vals, ...vals] : [];
   
   return (
     <div style={{
@@ -13,7 +14,7 @@ export function TickerTape() {
       backdropFilter: "blur(20px)", height: 36, overflow: "hidden", display: "flex",
       alignItems: "center", flexShrink: 0, position: "relative", zIndex: 5
     }}>
-      <div style={{ display: "flex", animation: "ticker 52s linear infinite", whiteSpace: "nowrap" }}>
+      <div style={{ display: "flex", animation: "ticker 180s linear infinite", whiteSpace: "nowrap" }}>
         {items.map((t, i) => {
           const l = live[t.sym] || t;
           const up = l.pct >= 0;

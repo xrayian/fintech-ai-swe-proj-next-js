@@ -5,7 +5,9 @@ import { Sparkles, Bot, Send, Star, ChevronDown, ChevronRight, X, Lightbulb } fr
 import { U, SCORECARD, QUICK_PROMPTS } from '@/lib/constants';
 import { computeScorecard, type ScorecardData } from '@/lib/scorecard-utils';
 import type { NormalizedFundamentals } from '@/lib/providers/types';
-import { DEFAULT_SYMBOLS } from '@/lib/providers/types';
+import { SP500_TOP100 } from '@/lib/symbols/sp500-top100';
+
+const COPILOT_SYMBOLS = SP500_TOP100.slice(0, 10).map(s => s.sym);
 import { ScoreCard } from './score-card';
 
 type Message = {
@@ -27,7 +29,7 @@ export default function AICopilot() {
   const inpRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    fetch(`/api/fundamentals?symbols=${DEFAULT_SYMBOLS.join(',')}`)
+    fetch(`/api/fundamentals?symbols=${COPILOT_SYMBOLS.join(',')}`)
       .then(r => r.ok ? r.json() : [])
       .then(data => {
         const map: Record<string, NormalizedFundamentals> = {};

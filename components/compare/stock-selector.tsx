@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Trophy, ChevronUp, ChevronDown } from 'lucide-react';
+import { Trophy, ChevronUp, ChevronDown, Search as SearchIcon } from 'lucide-react';
 import { U } from '@/lib/constants';
 import type { ScorecardData } from '@/lib/scorecard-utils';
 import { ScoreBadge } from '@/components/ai/score-badge';
@@ -18,9 +18,17 @@ interface StockSelectorProps {
   options: Record<string, ScorecardData>;
 }
 
+interface SearchResult {
+  sym: string;
+  name: string;
+}
+
 export function StockSelector({ value, onChange, exclude, accent, accentRgb, label, isWinner = false, options }: StockSelectorProps) {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [apiResults, setApiResults] = useState<SearchResult[]>([]);
   const ref = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const selected = options[value];
 
   useEffect(() => {
@@ -28,6 +36,27 @@ export function StockSelector({ value, onChange, exclude, accent, accentRgb, lab
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  useEffect(() => {
+    if (!search.trim()) { setApiResults([]); return; }
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/symbols?q=${encodeURIComponent(search)}`);
+        if (!res.ok) return;
+        setApiResults(await res.json());
+      } catch {}
+    }, 200);
+    return () => clearTimeout(debounceRef.current);
+  }, [search]);
+
+  const optionEntries = Object.entries(options);
+  const filteredOptions = optionEntries.filter(([sym, d]) =>
+    !search || sym.toLowerCase().includes(search.toLowerCase()) ||
+    d.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const apiOnly = apiResults.filter(r => !options[r.sym]);
 
   return (
     <div ref={ref} style={{ position: "relative", flex: 1 }}>
@@ -80,31 +109,63 @@ export function StockSelector({ value, onChange, exclude, accent, accentRgb, lab
           background: U.glass, backdropFilter: "blur(24px) saturate(150%)", borderRadius: 14, border: `1px solid ${U.borderHi}`,
           overflow: "hidden", boxShadow: `0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px ${U.border}`, animation: "fi .15s ease"
         }}>
-          {Object.entries(options).map(([sym, d]) => {
-            const isSelected = sym === value;
-            const isExcluded = sym === exclude;
-            return (
-              <div key={sym} onClick={() => { if (!isExcluded) { onChange(sym); setOpen(false); } }}
-                style={{
-                  display: "flex", alignItems: "center", gap: 12, padding: "11px 16px", cursor: isExcluded ? "not-allowed" : "pointer",
-                  background: isSelected ? `rgba(${accentRgb},0.1)` : isExcluded ? "rgba(255,255,255,0.01)" : "transparent",
-                  borderBottom: `1px solid ${U.border}`, opacity: isExcluded ? 0.35 : 1, transition: "background .12s"
-                }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: isSelected ? accent : U.text }}>{sym}</span>
-                    {isSelected && <span style={{ fontSize: 9, color: accent, fontWeight: 600, background: `rgba(${accentRgb},0.12)`, padding: "2px 6px", borderRadius: 999 }}>selected</span>}
-                    {isExcluded && <span style={{ fontSize: 9, color: U.textMute }}>in use</span>}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderBottom: `1px solid ${U.border}` }}>
+            <SearchIcon size={13} color={U.textMute} />
+            <input autoFocus value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search any symbol..."
+              style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: U.text, fontSize: 12 }}
+            />
+          </div>
+          <div style={{ maxHeight: 240, overflow: "auto" }}>
+            {filteredOptions.map(([sym, d]) => {
+              const isSelected = sym === value;
+              const isExcluded = sym === exclude;
+              return (
+                <div key={sym} onClick={() => { if (!isExcluded) { onChange(sym); setOpen(false); setSearch(''); } }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 12, padding: "11px 16px", cursor: isExcluded ? "not-allowed" : "pointer",
+                    background: isSelected ? `rgba(${accentRgb},0.1)` : isExcluded ? "rgba(255,255,255,0.01)" : "transparent",
+                    borderBottom: `1px solid ${U.border}`, opacity: isExcluded ? 0.35 : 1, transition: "background .12s"
+                  }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: isSelected ? accent : U.text }}>{sym}</span>
+                      {isSelected && <span style={{ fontSize: 9, color: accent, fontWeight: 600, background: `rgba(${accentRgb},0.12)`, padding: "2px 6px", borderRadius: 999 }}>selected</span>}
+                      {isExcluded && <span style={{ fontSize: 9, color: U.textMute }}>in use</span>}
+                    </div>
+                    <div style={{ fontSize: 10, color: U.textMute, marginTop: 2 }}>{d.name}</div>
                   </div>
-                  <div style={{ fontSize: 10, color: U.textMute, marginTop: 2 }}>{d.name}</div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: U.text, fontFamily: 'JetBrains Mono' }}>{d.score}<span style={{ fontSize: 9, color: U.textMute }}>/10</span></div>
+                    <div style={{ fontSize: 9, color: U.textMute, marginTop: 2 }}>P/E {d.pe}×</div>
+                  </div>
                 </div>
-                <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: U.text, fontFamily: 'JetBrains Mono' }}>{d.score}<span style={{ fontSize: 9, color: U.textMute }}>/10</span></div>
-                  <div style={{ fontSize: 9, color: U.textMute, marginTop: 2 }}>P/E {d.pe}×</div>
+              );
+            })}
+            {search && apiOnly.length > 0 && (
+              <>
+                <div style={{ padding: "8px 14px 4px", fontSize: 9, fontWeight: 700, color: U.textFaint, textTransform: "uppercase", letterSpacing: "0.1em", borderBottom: `1px solid ${U.border}` }}>
+                  More results from search
                 </div>
-              </div>
-            );
-          })}
+                {apiOnly.map(r => (
+                  <div key={r.sym} onClick={() => { onChange(r.sym); setOpen(false); setSearch(''); }}
+                    style={{ padding: "11px 16px", cursor: "pointer", borderBottom: `1px solid ${U.border}`, display: "flex", alignItems: "center", gap: 8 }}
+                    onMouseEnter={e => (e.currentTarget.style.background = U.glass)}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: U.text }}>{r.sym}</span>
+                      <div style={{ fontSize: 10, color: U.textMute, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</div>
+                    </div>
+                    <span style={{ fontSize: 9, color: U.cyan, background: U.cyanSoft, padding: "2px 7px", borderRadius: 999, fontWeight: 600 }}>load</span>
+                  </div>
+                ))}
+              </>
+            )}
+            {search && !filteredOptions.length && !apiOnly.length && (
+              <div style={{ padding: "16px", textAlign: "center", fontSize: 11, color: U.textMute }}>No matches</div>
+            )}
+          </div>
         </div>
       )}
     </div>

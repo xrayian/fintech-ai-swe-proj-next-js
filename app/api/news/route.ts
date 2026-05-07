@@ -1,9 +1,11 @@
 import { NextRequest } from 'next/server';
 import { fetchNews } from '@/lib/providers/orchestrator';
-import { TICKERS } from '@/lib/constants';
+import { SP500_TOP100 } from '@/lib/symbols/sp500-top100';
+
+const FALLBACK_SYMBOLS = SP500_TOP100.slice(0, 8).map(s => s.sym);
 
 export async function GET(request: NextRequest) {
-  const symbols = request.nextUrl.searchParams.get('symbols')?.split(',').filter(Boolean) || TICKERS.map(t => t.sym);
+  const symbols = request.nextUrl.searchParams.get('symbols')?.split(',').filter(Boolean) || FALLBACK_SYMBOLS;
   try {
     const data = await fetchNews(symbols);
     if (data.length) return Response.json(data);

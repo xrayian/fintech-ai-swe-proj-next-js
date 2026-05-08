@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Sparkles, Bot, Send, Star, Search as SearchIcon, Lightbulb } from 'lucide-react';
+import { Sparkles, Bot, Send, Star, Search as SearchIcon, Lightbulb, Loader2 } from 'lucide-react';
 import { U, SCORECARD } from '@/lib/constants';
 import { computeScorecard, type ScorecardData } from '@/lib/scorecard-utils';
 import type { NormalizedFundamentals } from '@/lib/providers/types';
 import { SP500_TOP100 } from '@/lib/symbols/sp500-top100';
 
 const COPILOT_SYMBOLS = SP500_TOP100.slice(0, 10).map(s => s.sym);
+interface SearchResult { sym: string; name: string; }
 import { ScoreCard } from './score-card';
 
 type Message = {
@@ -25,7 +26,12 @@ export default function AICopilot() {
   const [inputFocus, sif] = useState(false);
   const [streamBuf, sst] = useState("");
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [loadingSymbols, setLoadingSymbols] = useState<Set<string>>(new Set());
   const [fundamentalsMap, setFundamentalsMap] = useState<Record<string, NormalizedFundamentals>>({});
+  const searchRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const bot = useRef<HTMLDivElement>(null);
   const inpRef = useRef<HTMLTextAreaElement>(null);
 
@@ -41,6 +47,33 @@ export default function AICopilot() {
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) { setSearchResults([]); return; }
+    setSearching(true);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/symbols?q=${encodeURIComponent(searchQuery)}`);
+        if (!res.ok) return;
+        setSearchResults(await res.json());
+      } catch {} finally { setSearching(false); }
+    }, 200);
+    return () => clearTimeout(debounceRef.current);
+  }, [searchQuery]);
+
+  const loadSymbol = useCallback(async (sym: string) => {
+    if (fundamentalsMap[sym]) return;
+    setLoadingSymbols(p => new Set(p).add(sym));
+    try {
+      const res = await fetch(`/api/fundamentals?symbol=${sym}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data?.symbol) setFundamentalsMap(p => ({ ...p, [data.symbol]: data }));
+    } catch {} finally {
+      setLoadingSymbols(p => { const n = new Set(p); n.delete(sym); return n; });
+    }
+  }, [fundamentalsMap]);
 
   const scorecardMap = useMemo(() => {
     const map: Record<string, ScorecardData> = {};
@@ -164,25 +197,60 @@ export default function AICopilot() {
             <Star size={10} color={U.violet} /> Scorecards
           </div>
           <div style={{ fontSize: 11, color: U.textFaint, marginBottom: 8 }}>AI-scored investment signals</div>
-          <div style={{
+          <div ref={searchRef} style={{
             display: "flex", alignItems: "center", gap: 6, background: U.glassLo,
             border: `1px solid ${searchQuery ? U.violet : U.border}`, borderRadius: 8, padding: "6px 10px",
             transition: "all .15s"
           }}>
             <SearchIcon size={11} color={searchQuery ? U.violet : U.textMute} />
             <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Filter tickers..."
+              placeholder="Search any symbol..."
               style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: U.text, fontSize: 11 }}
             />
+            {searching && <Loader2 size={11} color={U.textMute} style={{ animation: "spin 1s linear infinite" }} />}
           </div>
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "12px 12px" }}>
-          {Object.entries(scorecardMap)
-            .filter(([sym, d]) => !searchQuery.trim() || sym.toLowerCase().includes(searchQuery.toLowerCase()) || d.name.toLowerCase().includes(searchQuery.toLowerCase()))
-            .map(([sym, d]) => (
-            <ScoreCard key={sym} ticker={sym} data={d} expanded={exp === sym} onToggle={() => se(exp === sym ? null : sym)} />
-          ))}
-          {searchQuery && Object.entries(scorecardMap).filter(([sym, d]) => sym.toLowerCase().includes(searchQuery.toLowerCase()) || d.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+          {searchQuery.trim() ? (
+            <>
+              {Object.entries(scorecardMap)
+                .filter(([sym, d]) => sym.toLowerCase().includes(searchQuery.toLowerCase()) || d.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                .map(([sym, d]) => (
+                  <ScoreCard key={sym} ticker={sym} data={d} expanded={exp === sym} onToggle={() => se(exp === sym ? null : sym)} />
+                ))}
+              {searchResults.filter(r => !scorecardMap[r.sym]).length > 0 && Object.entries(scorecardMap).filter(([sym, d]) => sym.toLowerCase().includes(searchQuery.toLowerCase()) || d.name.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 && (
+                <div style={{ padding: "8px 14px 4px", fontSize: 9, fontWeight: 700, color: U.textFaint, textTransform: "uppercase", letterSpacing: "0.1em" }}>More results from search</div>
+              )}
+              {searchResults.filter(r => !scorecardMap[r.sym]).map(r => {
+                const loading = loadingSymbols.has(r.sym);
+                return (
+                  <div key={r.sym} onClick={() => loadSymbol(r.sym)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", cursor: "pointer",
+                      background: U.glass, border: `1px solid ${U.border}`, borderRadius: 10, marginBottom: 6,
+                      transition: "all .15s",
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = U.glassHi; e.currentTarget.style.borderColor = U.borderHi; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = U.glass; e.currentTarget.style.borderColor = U.border; }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: U.text, letterSpacing: "-0.01em" }}>{r.sym}</div>
+                      <div style={{ fontSize: 10, color: U.textMute, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</div>
+                    </div>
+                    {loading ? (
+                      <Loader2 size={12} color={U.cyan} style={{ animation: "spin 1s linear infinite" }} />
+                    ) : (
+                      <span style={{ fontSize: 9, color: U.cyan, background: U.cyanSoft, padding: "3px 8px", borderRadius: 999, fontWeight: 600, flexShrink: 0 }}>Load</span>
+                    )}
+                  </div>
+                );
+              })}
+            </>
+          ) : (
+            Object.entries(scorecardMap).map(([sym, d]) => (
+              <ScoreCard key={sym} ticker={sym} data={d} expanded={exp === sym} onToggle={() => se(exp === sym ? null : sym)} />
+            ))
+          )}
+          {searchQuery.trim() && !searching && searchResults.length === 0 && (
             <div style={{ padding: "20px", textAlign: "center", fontSize: 11, color: U.textMute }}>No matching tickers</div>
           )}
         </div>

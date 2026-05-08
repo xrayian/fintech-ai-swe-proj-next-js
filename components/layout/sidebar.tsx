@@ -6,6 +6,7 @@ import {
   LayoutDashboard, TrendingUp, Bot, BarChart2, Globe
 } from "lucide-react";
 import { U } from '@/lib/constants';
+import { useMarketStatus } from '@/hooks/use-market-status';
 
 export const NAV = [
   { id: "dashboard", label: "Overview", icon: LayoutDashboard, href: "/dashboard" },
@@ -21,6 +22,7 @@ interface SidebarProps {
 
 export function Sidebar({ open }: SidebarProps) {
   const pathname = usePathname();
+  const { online, marketOpen, timestamp } = useMarketStatus();
 
   return (
     <div style={{
@@ -93,13 +95,20 @@ export function Sidebar({ open }: SidebarProps) {
           }}>Market Status</div>
           <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
             <span style={{
-              width: 7, height: 7, borderRadius: "50%", background: U.emerald,
-              boxShadow: `0 0 8px ${U.emerald}`, animation: "pulse-dot 2.5s ease infinite"
+              width: 7, height: 7, borderRadius: "50%",
+              background: online ? (marketOpen ? U.emerald : U.amber) : U.rose,
+              boxShadow: online && marketOpen ? `0 0 8px ${U.emerald}` : 'none',
+              animation: online && marketOpen ? "pulse-dot 2.5s ease infinite" : "none"
             }} />
-            <span style={{ fontSize: 12, fontWeight: 600, color: U.emerald }}>NYSE Open</span>
+            <span style={{
+              fontSize: 12, fontWeight: 600,
+              color: online ? (marketOpen ? U.emerald : U.amber) : U.rose
+            }}>
+              {online ? (marketOpen ? 'NYSE Open' : 'Market Closed') : 'Offline'}
+            </span>
           </div>
           <div style={{ fontSize: 10, color: U.textFaint, marginTop: 4, fontFamily: 'JetBrains Mono' }}>
-            2:34 PM EST · May 2, 2026
+            {timestamp || '—'}
           </div>
         </div>
       </div>

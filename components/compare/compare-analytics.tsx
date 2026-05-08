@@ -1,27 +1,31 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { BarChart2, Trophy, BarChart3, Zap, AlertTriangle, TrendingUp } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { BarChart2, Trophy, BarChart3, Zap, AlertTriangle, TrendingUp, RefreshCw, ArrowLeftRight } from 'lucide-react';
 import {
   RadarChart, Radar, PolarGrid,
   PolarAngleAxis, PolarRadiusAxis, Legend, ResponsiveContainer
 } from 'recharts';
 import { U, SCORECARD, fmt } from '@/lib/constants';
+import type { NormalizedFundamentals } from '@/lib/providers/types';
+import { computeScorecard, type ScorecardData } from '@/lib/scorecard-utils';
 import { StockSelector } from './stock-selector';
 import { SectionTitle } from '@/components/shared/section-title';
 import { GlassCard } from '@/components/shared/glass-card';
+import { ErrorMessage } from '@/components/shared/error-message';
+import { useToast } from '@/components/shared/toast-provider';
+import { SP500_TOP100 } from '@/lib/symbols/sp500-top100';
 
-export default function CompareAnalytics() {
-  const [mounted, setMounted] = useState(false);
-  const [symA, setSymA] = useState("AAPL");
-  const [symB, setSymB] = useState("MSFT");
+const COMPARE_DEFAULTS = SP500_TOP100.slice(0, 8).map(s => s.sym);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const a = (SCORECARD as any)[symA];
-  const b = (SCORECARD as any)[symB];
+function MainContent({ symA, symB, onChangeA, onChangeB, scorecardMap, mounted, fetchData }: {
+  symA: string; symB: string;
+  onChangeA: (v: string) => void; onChangeB: (v: string) => void;
+  scorecardMap: Record<string, ScorecardData>;
+  mounted: boolean; fetchData: () => void;
+}) {
+  const a = scorecardMap[symA]!;
+  const b = scorecardMap[symB]!;
 
   const radarData = [
     { m: "Valuation", A: a.radar.val, B: b.radar.val },
@@ -36,8 +40,8 @@ export default function CompareAnalytics() {
     { l: "Revenue CAGR", a: a.cagr, b: b.cagr, u: "%" },
     { l: "ROE", a: a.roe, b: b.roe, u: "%" },
     { l: "Net Margin", a: a.margin, b: b.margin, u: "%" },
-    { l: "P/E Ratio", a: a.pe, b: b.pe, u: "×", inv: true },
-    { l: "D/E Ratio", a: a.de, b: b.de, u: "×", inv: true },
+    { l: "P/E Ratio", a: a.pe, b: b.pe, u: "\u00d7", inv: true },
+    { l: "D/E Ratio", a: a.de, b: b.de, u: "\u00d7", inv: true },
     { l: "AI Score", a: a.score * 10, b: b.score * 10, u: "/100" },
   ];
 
@@ -46,36 +50,28 @@ export default function CompareAnalytics() {
   const winnerData = a.score >= b.score ? a : b;
   const loserData = a.score >= b.score ? b : a;
   const winnerColor = winner === symA ? U.cyan : U.violet;
+
   const winnerMetrics = metrics.filter(m => {
     const aw = m.inv ? m.a < m.b : m.a > m.b;
     return winner === symA ? aw : !aw;
   }).length;
 
-  const marginEdge = a.margin >= b.margin ? { leader: symA, lVal: a.margin, fVal: b.margin } : { leader: symB, lVal: b.margin, fVal: a.margin };
-  const roeEdge = a.roe >= b.roe ? { leader: symA, lVal: fmt(a.roe, 1), fVal: fmt(b.roe, 1) } : { leader: symB, lVal: fmt(b.roe, 1), fVal: fmt(a.roe, 1) };
+  const marginEdge = a.margin >= b.margin
+    ? { leader: symA, lVal: a.margin, fVal: b.margin }
+    : { leader: symB, lVal: b.margin, fVal: a.margin };
+  const roeEdge = a.roe >= b.roe
+    ? { leader: symA, lVal: fmt(a.roe, 1), fVal: fmt(b.roe, 1) }
+    : { leader: symB, lVal: fmt(b.roe, 1), fVal: fmt(a.roe, 1) };
 
   const verdictRows = [
-    { icon: Trophy, label: "Winner", color: winnerColor, value: <><span style={{ color: winnerColor, fontWeight: 700 }}>{winner}</span><span style={{ color: U.textDim }}> — {winnerData.score}/10 AI Score</span></> },
-    { icon: BarChart3, label: "Key Edge", color: U.textMute, value: <span style={{ color: U.textDim }}>Margin <span style={{ color: winnerColor, fontWeight: 600 }}>{marginEdge.lVal}%</span><span style={{ color: U.textMute }}> vs {marginEdge.fVal}%</span>{" · "}ROE <span style={{ color: winnerColor, fontWeight: 600 }}>{roeEdge.lVal}%</span><span style={{ color: U.textMute }}> vs {roeEdge.fVal}%</span></span> },
+    { icon: Trophy, label: "Winner", color: winnerColor, value: <><span style={{ color: winnerColor, fontWeight: 700 }}>{winner}</span>            <span style={{ color: U.textDim }}>{" \u2014 "}{winnerData.score}/10 AI Score</span></> },
+    { icon: BarChart3, label: "Key Edge", color: U.textMute, value: <span style={{ color: U.textDim }}>Margin <span style={{ color: winnerColor, fontWeight: 600 }}>{marginEdge.lVal}%</span><span style={{ color: U.textMute }}> vs {marginEdge.fVal}%</span>{" \u00b7 "}ROE <span style={{ color: winnerColor, fontWeight: 600 }}>{roeEdge.lVal}%</span><span style={{ color: U.textMute }}> vs {roeEdge.fVal}%</span></span> },
     { icon: Zap, label: "Action", color: U.amber, value: <span style={{ color: U.textDim }}>Stronger hold for <span style={{ color: U.text, fontWeight: 600 }}>12-month</span> horizon. {winner === "AAPL" || winner === "GOOGL" || winner === "META" ? "Valuation is attractive relative to growth." : "Premium justified by structural tailwinds."}</span> },
-    { icon: AlertTriangle, label: "Risk", color: U.rose, value: <span style={{ color: U.textDim }}><span style={{ color: U.rose, fontWeight: 600 }}>{loser}</span> — {loserData.verdict.toLowerCase()}. P/E {loserData.pe}× warrants position-sizing discipline.</span> },
+    { icon: AlertTriangle, label: "Risk", color: U.rose, value: <span style={{ color: U.textDim }}><span style={{ color: U.rose, fontWeight: 600 }}>{loser}</span>{" \u2014 "}{loserData.verdict.toLowerCase()}. P/E {loserData.pe}{"\u00d7"} warrants position-sizing discipline.</span> },
   ];
 
   return (
-    <div style={{ animation: "fi .25s ease" }}>
-      <div style={{ marginBottom: 16 }}>
-        <SectionTitle icon={BarChart2}>Select two stocks to compare</SectionTitle>
-        <div style={{ display: "flex", gap: 12, alignItems: "flex-start", position: "relative" }}>
-          <StockSelector value={symA} onChange={setSymA} exclude={symB} accent={U.cyan} accentRgb="34,211,238" label="Stock A" isWinner={winner === symA} />
-          <div style={{
-            flexShrink: 0, alignSelf: "center", width: 36, height: 36, borderRadius: "50%",
-            background: U.glass, border: `1px solid ${U.borderHi}`, backdropFilter: "blur(12px)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 11, fontWeight: 800, color: U.textMute
-          }}>VS</div>
-          <StockSelector value={symB} onChange={setSymB} exclude={symA} accent={U.violet} accentRgb="167,139,250" label="Stock B" isWinner={winner === symB} />
-        </div>
-      </div>
+    <>
 
       <GlassCard style={{
         padding: "14px 18px", marginBottom: 14,
@@ -112,7 +108,7 @@ export default function CompareAnalytics() {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
         <GlassCard style={{ padding: "20px 22px", display: "flex", flexDirection: "column" }}>
-          <SectionTitle>Radar — 6 Dimensions</SectionTitle>
+          <SectionTitle>Radar{" \u2014 "}6 Dimensions</SectionTitle>
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
             {mounted ? (
               <ResponsiveContainer width="100%" height={320}>
@@ -201,6 +197,140 @@ export default function CompareAnalytics() {
           </div>
         </GlassCard>
       </div>
+    </>
+  );
+}
+
+export default function CompareAnalytics({ initialSymbol }: { initialSymbol?: string }) {
+  const initialSym = initialSymbol || "AAPL";
+  const [mounted, setMounted] = useState(false);
+  const [symA, setSymA] = useState(initialSym);
+  const [symB, setSymB] = useState(initialSym === "AAPL" ? "MSFT" : "AAPL");
+  const [fundamentalsMap, setFundamentalsMap] = useState<Record<string, NormalizedFundamentals>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const mountedRef = useRef(true);
+  const { toast } = useToast();
+
+  useEffect(() => { setMounted(true); mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
+
+  const loadSymbols = useCallback(async (symbols: string[]) => {
+    setError(null);
+    setLoading(true);
+    const unique = [...new Set([...COMPARE_DEFAULTS, ...symbols])];
+    try {
+      const res = await fetch(`/api/fundamentals?symbols=${unique.join(',')}`);
+      if (!res.ok) throw new Error('Failed to load fundamental data');
+      const data: NormalizedFundamentals[] = await res.json();
+      if (!mountedRef.current) return;
+      const map: Record<string, NormalizedFundamentals> = {};
+      for (const item of data) {
+        if (item.symbol) map[item.symbol] = item;
+      }
+      if (Object.keys(map).length === 0) throw new Error('No fundamental data available');
+      setFundamentalsMap(prev => Object.keys(prev).length ? prev : map);
+    } catch (e) {
+      if (mountedRef.current) setError(e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      if (mountedRef.current) setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSymbols([symA, symB]);
+  }, []);
+
+  const retry = useCallback(() => {
+    loadSymbols([symA, symB]);
+  }, [symA, symB]);
+
+  const fetchSym = useCallback(async (sym: string) => {
+    try {
+      const res = await fetch(`/api/fundamentals?symbol=${sym}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.symbol) setFundamentalsMap(prev => {
+          if (prev[data.symbol]) return prev;
+          return { ...prev, [data.symbol]: data };
+        });
+      }
+    } catch {
+      toast('error', `Failed to load data for ${sym}`);
+    }
+  }, []);
+
+  const handleSwap = useCallback(() => {
+    setSymA(symB);
+    setSymB(symA);
+  }, [symA, symB]);
+
+  const handleChangeA = useCallback((sym: string) => {
+    setSymA(sym);
+    fetchSym(sym);
+  }, [fetchSym]);
+
+  const handleChangeB = useCallback((sym: string) => {
+    setSymB(sym);
+    fetchSym(sym);
+  }, [fetchSym]);
+
+  const scorecardMap = useMemo(() => {
+    const map: Record<string, ScorecardData> = {};
+    for (const [sym, f] of Object.entries(fundamentalsMap)) {
+      map[sym] = computeScorecard(f);
+    }
+    if (Object.keys(map).length === 0) return SCORECARD as unknown as Record<string, ScorecardData>;
+    return map;
+  }, [fundamentalsMap]);
+
+  const hasData = scorecardMap[symA] && scorecardMap[symB];
+
+  return (
+    <div style={{ animation: "fi .25s ease" }}>
+      <div style={{ marginBottom: 16 }}>
+        <SectionTitle icon={BarChart2}>Select two stocks to compare</SectionTitle>
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-start", position: "relative" }}>
+          <StockSelector value={symA} onChange={handleChangeA} exclude={symB} accent={U.cyan} accentRgb="34,211,238" label="Stock A" isWinner={!!hasData && (scorecardMap[symA]?.score ?? 0) >= (scorecardMap[symB]?.score ?? 0)} options={scorecardMap} />
+          <div style={{ flexShrink: 0, alignSelf: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: U.glass, border: `1px solid ${U.borderHi}`, backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: U.textMute }}>VS</div>
+            <button onClick={handleSwap} title="Swap symbols" style={{
+              background: 'transparent', border: `1px solid ${U.border}`, borderRadius: 8,
+              color: U.textMute, cursor: 'pointer', padding: 4,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all .15s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.color = U.cyan; e.currentTarget.style.borderColor = U.cyan; }}
+              onMouseLeave={e => { e.currentTarget.style.color = U.textMute; e.currentTarget.style.borderColor = U.border; }}
+            >
+              <ArrowLeftRight size={12} />
+            </button>
+          </div>
+          <StockSelector value={symB} onChange={handleChangeB} exclude={symA} accent={U.violet} accentRgb="167,139,250" label="Stock B" isWinner={!!hasData && (scorecardMap[symB]?.score ?? 0) >= (scorecardMap[symA]?.score ?? 0)} options={scorecardMap} />
+        </div>
+      </div>
+
+      {error && !hasData && (
+        <div style={{ marginBottom: 14 }}>
+          <ErrorMessage message={error} onRetry={retry} />
+        </div>
+      )}
+
+      {!hasData && !error && (
+        <GlassCard style={{ padding: "40px", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>
+          <RefreshCw size={24} color={U.textMute} style={{ animation: "spin .8s linear infinite" }} />
+          <span style={{ color: U.textMute, fontSize: 13 }}>Loading fundamental data from live sources...</span>
+        </GlassCard>
+      )}
+
+      {hasData && (
+        <MainContent
+          symA={symA} symB={symB}
+          onChangeA={handleChangeA} onChangeB={handleChangeB}
+          scorecardMap={scorecardMap}
+          mounted={mounted}
+          fetchData={retry}
+        />
+      )}
     </div>
   );
 }

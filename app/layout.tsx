@@ -6,6 +6,7 @@ import { AmbientBg } from '@/components/layout/ambient-bg';
 import { TickerTape } from '@/components/layout/ticker-tape';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
+import { ToastProvider } from '@/components/shared/toast-provider';
 import "./globals.css";
 
 export default function RootLayout({
@@ -35,7 +36,7 @@ export default function RootLayout({
               background: "rgba(5,5,8,0.3)",
               position: "relative"
             }}>
-              {children}
+              <ToastProvider>{children}</ToastProvider>
             </main>
           </div>
         </div>

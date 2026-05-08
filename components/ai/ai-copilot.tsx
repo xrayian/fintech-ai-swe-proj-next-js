@@ -1,8 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { Sparkles, Bot, Send, Star, ChevronDown, ChevronRight, X, Lightbulb } from 'lucide-react';
-import { U, SCORECARD, QUICK_PROMPTS } from '@/lib/constants';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Sparkles, Bot, Send, Star, Search as SearchIcon, Lightbulb, Loader2 } from 'lucide-react';
+import { U, SCORECARD } from '@/lib/constants';
+import { computeScorecard, type ScorecardData } from '@/lib/scorecard-utils';
+import type { NormalizedFundamentals } from '@/lib/providers/types';
+import { SP500_TOP100 } from '@/lib/symbols/sp500-top100';
+
+const COPILOT_SYMBOLS = SP500_TOP100.slice(0, 10).map(s => s.sym);
+interface SearchResult { sym: string; name: string; }
 import { ScoreCard } from './score-card';
 
 type Message = {
@@ -10,7 +16,7 @@ type Message = {
   content: string;
 };
 
-const AI_INIT: Message[] = [{ role: "assistant", content: "**Good morning.** I'm your AI Copilot for market intelligence. I've analyzed 847 data points since market open.\n\n**Today's quick pulse:**\n- Risk-On sentiment detected across tech and growth sectors\n- **NVDA** showing breakout volume — 2.3× daily average\n- Caution: Elevated fear index in Asia-Pacific markets\n\nAsk me anything — *\"Is AAPL wise to invest now?\"* or *\"Compare MSFT vs GOOGL\"*" }];
+const AI_INIT: Message[] = [{ role: "assistant", content: "**Welcome.** I'm your AI Copilot for market intelligence. I can analyze stocks using live fundamental data — ask about valuations, compare tickers, or explore market sectors.\n\n**Try asking:**\n- *\"Is AAPL wise to invest now?\"*\n- *\"Compare MSFT vs GOOGL\"*\n- *\"What's the risk on TSLA?\"*" }];
 
 export default function AICopilot() {
   const [msgs, sm] = useState<Message[]>(AI_INIT);
@@ -18,23 +24,146 @@ export default function AICopilot() {
   const [loading, sl] = useState(false);
   const [exp, se] = useState<string | null>(null);
   const [inputFocus, sif] = useState(false);
+  const [streamBuf, sst] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [loadingSymbols, setLoadingSymbols] = useState<Set<string>>(new Set());
+  const [fundamentalsMap, setFundamentalsMap] = useState<Record<string, NormalizedFundamentals>>({});
+  const searchRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const bot = useRef<HTMLDivElement>(null);
   const inpRef = useRef<HTMLTextAreaElement>(null);
 
+  useEffect(() => {
+    fetch(`/api/fundamentals?symbols=${COPILOT_SYMBOLS.join(',')}`)
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        const map: Record<string, NormalizedFundamentals> = {};
+        for (const item of (Array.isArray(data) ? data : [])) {
+          if (item.symbol) map[item.symbol] = item;
+        }
+        if (Object.keys(map).length > 0) setFundamentalsMap(map);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) { setSearchResults([]); return; }
+    setSearching(true);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/symbols?q=${encodeURIComponent(searchQuery)}`);
+        if (!res.ok) return;
+        setSearchResults(await res.json());
+      } catch {} finally { setSearching(false); }
+    }, 200);
+    return () => clearTimeout(debounceRef.current);
+  }, [searchQuery]);
+
+  const loadSymbol = useCallback(async (sym: string) => {
+    if (fundamentalsMap[sym]) return;
+    setLoadingSymbols(p => new Set(p).add(sym));
+    try {
+      const res = await fetch(`/api/fundamentals?symbol=${sym}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data?.symbol) setFundamentalsMap(p => ({ ...p, [data.symbol]: data }));
+    } catch {} finally {
+      setLoadingSymbols(p => { const n = new Set(p); n.delete(sym); return n; });
+    }
+  }, [fundamentalsMap]);
+
+  const scorecardMap = useMemo(() => {
+    const map: Record<string, ScorecardData> = {};
+    for (const [sym, f] of Object.entries(fundamentalsMap)) {
+      map[sym] = computeScorecard(f);
+    }
+    if (Object.keys(map).length === 0) return SCORECARD as unknown as Record<string, ScorecardData>;
+    return map;
+  }, [fundamentalsMap]);
+
   useEffect(() => { bot.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
+
+  const dynamicPrompts = useMemo(() => {
+    const entries = Object.entries(scorecardMap);
+    if (!entries.length) return [];
+    const byScore = [...entries].sort((a, b) => b[1].score - a[1].score);
+    const top = byScore.slice(0, 3);
+    const prompts: string[] = [];
+    if (top.length >= 2) {
+      prompts.push(`Compare ${top[0][0]} vs ${top[1][0]}`);
+    }
+    if (top.length >= 1) {
+      prompts.push(`Is ${top[0][0]} wise to invest right now?`);
+    }
+    if (top.length >= 3) {
+      prompts.push(`What's the risk on ${top[2][0]}?`);
+    }
+    if (entries.length > 1) {
+      prompts.push(`Which stock has the best fundamentals?`);
+    }
+    const worst = byScore[byScore.length - 1];
+    if (worst && worst[1].score < 6) {
+      prompts.push(`Why is ${worst[0]} rated low?`);
+    }
+    return prompts.slice(0, 6);
+  }, [scorecardMap]);
 
   const send = useCallback(async (overrideText?: string) => {
     const text = overrideText ?? inp;
     if (!text.trim() || loading) return;
     const um = { role: "user" as const, content: text };
-    sm(p => [...p, um]); si(""); sl(true);
-    
-    // Simulation of AI response as external API might not be available or need key
-    setTimeout(() => {
-        const response = "I've analyzed the current market data. Based on **fundamental metrics** and **sentiment analysis**, this asset shows a strong profile. The current P/E ratio is aligned with historical averages, while ROE continues to outperform sector peers.";
-        sm(p => [...p, { role: "assistant" as const, content: response }]);
-        sl(false);
-    }, 1500);
+    sm(p => [...p, um]); si(""); sl(true); sst("");
+
+    try {
+      const res = await fetch('/api/copilot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [...msgs, um] }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || `API error ${res.status}`);
+      }
+
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let acc = "";
+      let buf = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+
+        const lines = buf.split('\n');
+        buf = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const json = line.slice(6).trim();
+          if (json === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(json);
+            const chunk = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (chunk) {
+              acc += chunk;
+              sst(acc);
+            }
+          } catch { /* skip malformed chunks */ }
+        }
+      }
+
+      sm(p => [...p, { role: "assistant", content: acc }]);
+      sst("");
+    } catch (err) {
+      const errMsg = `Sorry, I encountered an error: ${err instanceof Error ? err.message : 'Unknown error'}`;
+      sm(p => [...p, { role: "assistant", content: errMsg }]);
+    } finally {
+      sl(false);
+    }
   }, [inp, loading, msgs]);
 
   const clearChat = () => { sm(AI_INIT); };
@@ -67,12 +196,63 @@ export default function AICopilot() {
           }}>
             <Star size={10} color={U.violet} /> Scorecards
           </div>
-          <div style={{ fontSize: 11, color: U.textFaint }}>AI-scored investment signals</div>
+          <div style={{ fontSize: 11, color: U.textFaint, marginBottom: 8 }}>AI-scored investment signals</div>
+          <div ref={searchRef} style={{
+            display: "flex", alignItems: "center", gap: 6, background: U.glassLo,
+            border: `1px solid ${searchQuery ? U.violet : U.border}`, borderRadius: 8, padding: "6px 10px",
+            transition: "all .15s"
+          }}>
+            <SearchIcon size={11} color={searchQuery ? U.violet : U.textMute} />
+            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search any symbol..."
+              style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: U.text, fontSize: 11 }}
+            />
+            {searching && <Loader2 size={11} color={U.textMute} style={{ animation: "spin 1s linear infinite" }} />}
+          </div>
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "12px 12px" }}>
-          {Object.entries(SCORECARD).map(([sym, d]) => (
-            <ScoreCard key={sym} ticker={sym} data={d} expanded={exp === sym} onToggle={() => se(exp === sym ? null : sym)} />
-          ))}
+          {searchQuery.trim() ? (
+            <>
+              {Object.entries(scorecardMap)
+                .filter(([sym, d]) => sym.toLowerCase().includes(searchQuery.toLowerCase()) || d.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                .map(([sym, d]) => (
+                  <ScoreCard key={sym} ticker={sym} data={d} expanded={exp === sym} onToggle={() => se(exp === sym ? null : sym)} />
+                ))}
+              {searchResults.filter(r => !scorecardMap[r.sym]).length > 0 && Object.entries(scorecardMap).filter(([sym, d]) => sym.toLowerCase().includes(searchQuery.toLowerCase()) || d.name.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 && (
+                <div style={{ padding: "8px 14px 4px", fontSize: 9, fontWeight: 700, color: U.textFaint, textTransform: "uppercase", letterSpacing: "0.1em" }}>More results from search</div>
+              )}
+              {searchResults.filter(r => !scorecardMap[r.sym]).map(r => {
+                const loading = loadingSymbols.has(r.sym);
+                return (
+                  <div key={r.sym} onClick={() => loadSymbol(r.sym)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", cursor: "pointer",
+                      background: U.glass, border: `1px solid ${U.border}`, borderRadius: 10, marginBottom: 6,
+                      transition: "all .15s",
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = U.glassHi; e.currentTarget.style.borderColor = U.borderHi; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = U.glass; e.currentTarget.style.borderColor = U.border; }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: U.text, letterSpacing: "-0.01em" }}>{r.sym}</div>
+                      <div style={{ fontSize: 10, color: U.textMute, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</div>
+                    </div>
+                    {loading ? (
+                      <Loader2 size={12} color={U.cyan} style={{ animation: "spin 1s linear infinite" }} />
+                    ) : (
+                      <span style={{ fontSize: 9, color: U.cyan, background: U.cyanSoft, padding: "3px 8px", borderRadius: 999, fontWeight: 600, flexShrink: 0 }}>Load</span>
+                    )}
+                  </div>
+                );
+              })}
+            </>
+          ) : (
+            Object.entries(scorecardMap).map(([sym, d]) => (
+              <ScoreCard key={sym} ticker={sym} data={d} expanded={exp === sym} onToggle={() => se(exp === sym ? null : sym)} />
+            ))
+          )}
+          {searchQuery.trim() && !searching && searchResults.length === 0 && (
+            <div style={{ padding: "20px", textAlign: "center", fontSize: 11, color: U.textMute }}>No matching tickers</div>
+          )}
         </div>
         <div style={{ padding: "10px 14px", borderTop: `1px solid ${U.border}`, flexShrink: 0, background: "rgba(5,5,8,0.4)" }}>
           <div style={{ fontSize: 10, color: U.textFaint, lineHeight: 1.5, display: "flex", alignItems: "flex-start", gap: 6 }}>
@@ -161,7 +341,13 @@ export default function AICopilot() {
               }} dangerouslySetInnerHTML={{ __html: md(m.content) }} />
             </div>
           ))}
-          {loading && (
+          {loading && streamBuf && (
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, animation: "fi .2s ease" }}>
+              <div style={{ width: 28, height: 28, background: `linear-gradient(135deg,${U.cyan},${U.violet})`, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><Bot size={12} color="#0a0a0f" /></div>
+              <div style={{ maxWidth: "72%", padding: "11px 15px", fontSize: 13, lineHeight: 1.7, color: U.text, borderRadius: "4px 16px 16px 16px", background: `linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04))`, border: "1px solid rgba(167,139,250,0.18)", backdropFilter: "blur(10px)", boxShadow: `0 2px 16px rgba(0,0,0,0.3)` }} dangerouslySetInnerHTML={{ __html: md(streamBuf) }} />
+            </div>
+          )}
+          {loading && !streamBuf && (
             <div style={{ display: "flex", alignItems: "flex-start", gap: 10, animation: "fi .2s ease" }}>
               <div style={{ width: 28, height: 28, background: `linear-gradient(135deg,${U.cyan},${U.violet})`, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><Bot size={12} color="#0a0a0f" /></div>
               <div style={{ padding: "13px 18px", background: `linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04))`, border: "1px solid rgba(167,139,250,0.18)", borderRadius: "4px 16px 16px 16px", display: "flex", alignItems: "center", gap: 5 }}>
@@ -175,7 +361,7 @@ export default function AICopilot() {
 
         <div className="chip-scroll" style={{ padding: "8px 16px", borderTop: `1px solid ${U.border}`, display: "flex", gap: 6, overflowX: "auto", flexShrink: 0, background: "rgba(5,5,8,0.4)" }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: U.textFaint, textTransform: "uppercase", letterSpacing: "0.12em", flexShrink: 0, alignSelf: "center", marginRight: 4 }}>Quick:</div>
-          {QUICK_PROMPTS.map(p => (
+          {dynamicPrompts.map(p => (
             <button key={p} onClick={() => send(p)} style={{
               padding: "5px 12px", borderRadius: 999, border: `1px solid ${U.border}`, background: U.glassLo, color: U.textDim, cursor: "pointer",
               fontSize: 11, fontWeight: 500, whiteSpace: "nowrap", flexShrink: 0, transition: "all .15s",

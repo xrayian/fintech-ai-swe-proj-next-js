@@ -35,25 +35,6 @@ export const TICKERS = [
   {sym:"NFLX",name:"Netflix Inc.",    price:648.22,chg:-1.78,pct:-0.27},
 ];
 
-export const SECTORS = [
-  {name:"Technology",value:38.2,chg:+1.8},{name:"Healthcare",value:13.1,chg:+0.4},
-  {name:"Financials",value:12.8,chg:-0.6},{name:"Consumer Disc.",value:10.4,chg:-1.2},
-  {name:"Industrials",value:8.7,chg:+0.2},{name:"Energy",value:4.9,chg:-2.1},
-  {name:"Utilities",value:3.8,chg:+0.7},{name:"Materials",value:3.1,chg:+0.1},
-  {name:"Real Estate",value:2.9,chg:-0.3},{name:"Comm. Svcs.",value:2.1,chg:+1.1},
-];
-
-export const NEWS = [
-  { id: 1, headline: "Fed signals two more rate cuts in 2025 as inflation cools to 2.1%", source: "Reuters", time: "2 m ago", fear: 28, sentiment: "Greed", region: "US" },
-  { id: 2, headline: "NVIDIA surpasses $3T market cap amid AI chip supercycle demand surge", source: "Bloomberg", time: "14m ago", fear: 12, sentiment: "Extreme Greed", region: "US" },
-  { id: 3, headline: "China's Evergrande restructuring fails; contagion risk spreads to Hong Kong banks", source: "FT", time: "31m ago", fear: 82, sentiment: "Fear", region: "CN" },
-  { id: 4, headline: "EU antitrust regulators open probe into Apple's App Store dominance", source: "WSJ", time: "52m ago", fear: 61, sentiment: "Fear", region: "EU" },
-  { id: 5, headline: "Saudi Aramco announces record $124B annual dividend for 2024", source: "CNBC", time: "1h ago", fear: 22, sentiment: "Greed", region: "SA" },
-  { id: 6, headline: "Japan's Nikkei falls 2.3% on BOJ surprise rate hike announcement", source: "Nikkei", time: "1h ago", fear: 74, sentiment: "Fear", region: "JP" },
-  { id: 7, headline: "Microsoft Azure cloud revenue grows 35% YoY — analysts raise price targets", source: "Barrons", time: "2h ago", fear: 15, sentiment: "Extreme Greed", region: "US" },
-  { id: 8, headline: "Oil slips below $70/barrel on rising US inventory data", source: "Reuters", time: "2h ago", fear: 55, sentiment: "Neutral", region: "Global" },
-];
-
 export const SCORECARD = {
   AAPL: {pe:28.4,roe:147.2,cagr:8.3, margin:26.4,de:1.76,score:7.8,verdict:"Wise to Invest",      tag:"Value Quality",  name:"Apple Inc.",      radar:{val:72,prof:88,growth:62,health:70,mom:76,sent:80}},
   MSFT: {pe:34.2,roe:45.1, cagr:14.8,margin:43.1,de:0.52,score:8.4,verdict:"Wise to Invest",      tag:"Stable Growth",  name:"Microsoft Corp.", radar:{val:65,prof:82,growth:78,health:91,mom:69,sent:74}},
@@ -73,21 +54,5 @@ export const QUICK_PROMPTS = [
   "Explain P/E ratio in simple terms",
   "Best growth stock this quarter?",
 ];
-
-export function genCandles(n = 60) {
-  const d = []; let p = 200;
-  for (let i = 0; i < n; i++) {
-    const o = p + (Math.random() - .5) * 4, c = o + (Math.random() - .48) * 6;
-    const dt = new Date(2025, 0, i + 1);
-    d.push({
-      date: `${dt.getMonth() + 1}/${dt.getDate()}`, open: +o.toFixed(2), close: +c.toFixed(2),
-      high: +(Math.max(o, c) + Math.random() * 3).toFixed(2), low: +(Math.min(o, c) - Math.random() * 3).toFixed(2),
-      volume: Math.round(Math.abs(45e6 + (Math.random() - .5) * 20e6)), bullish: c >= o
-    });
-    p = c;
-  } return d;
-}
-
-export const CANDLE_DATA = genCandles(60);
 
 export const fmt = (n: number | string, d = 2) => Number(n).toFixed(d);

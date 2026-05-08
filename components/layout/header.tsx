@@ -8,11 +8,14 @@ import { Btn } from '@/components/shared/btn';
 import { NAV } from './sidebar';
 
 export const SUBS: Record<string, string> = {
-  "/dashboard": "Real-time global market intelligence dashboard",
-  "/technical": "OHLC candlestick analysis with 250ms throttled live updates",
-  "/copilot": "AI-powered investment coaching — synthesizing P/E, ROE & CAGR",
+  "/dashboard": "Live market intelligence dashboard",
+  "/technical": "OHLC candlestick analysis with 30s live polling",
+  "/copilot": "AI-powered investment coaching with live fundamentals",
   "/compare": "Side-by-side multivariate asset comparison via radar analysis",
   "/news": "Global news feed with AI-assigned Fear/Greed sentiment scores",
+  "/settings": "API connections and display preferences",
+  "/notifications": "Price alerts, news alerts, and AI signals",
+  "/search": "Search across 8 tracked symbols",
 };
 
 interface HeaderProps {

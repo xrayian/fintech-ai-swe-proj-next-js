@@ -89,16 +89,14 @@ export async function fetchCandles(symbol: string, resolution: string, count: nu
 export async function fetchFundamentals(symbol: string): Promise<NormalizedFundamentals | null> {
   const data = await fetchJson({ function: 'OVERVIEW', symbol });
   if (!data?.Symbol) return null;
-  return {
-    symbol,
-    name: data.Name || '',
-    peRatio: parseFloat(data.PERatio) || 0,
-    roe: parseFloat(data.ReturnOnEquityTTM) || 0,
-    revenueCagr: parseFloat(data.RevenueGrowthTTM) || 0,
-    netMargin: parseFloat(data.ProfitMargin) || 0,
-    debtEquity: parseFloat(data.DebtToEquity) || 0,
-    marketCap: parseFloat(data.MarketCapitalization) || 0,
-  };
+  const peRatio = parseFloat(data.PERatio) || 0;
+  const roe = parseFloat(data.ReturnOnEquityTTM) || 0;
+  const revenueCagr = parseFloat(data.RevenueGrowthTTM) || 0;
+  const netMargin = parseFloat(data.ProfitMargin) || 0;
+  const debtEquity = parseFloat(data.DebtToEquity) || 0;
+  const marketCap = parseFloat(data.MarketCapitalization) || 0;
+  if (!peRatio && !roe && !revenueCagr && !netMargin) return null;
+  return { symbol, name: data.Name || '', peRatio, roe, revenueCagr, netMargin, debtEquity, marketCap };
 }
 
 export async function fetchIndicators(symbol: string): Promise<NormalizedIndicators> {

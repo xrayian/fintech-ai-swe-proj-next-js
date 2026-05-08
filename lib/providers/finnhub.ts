@@ -73,16 +73,14 @@ export async function fetchFundamentals(symbol: string): Promise<NormalizedFunda
   const data = await fetchJson(`/stock/metric?symbol=${symbol}&metric=all`);
   const m = data?.metric;
   if (!m) return null;
-  return {
-    symbol,
-    name: '',
-    peRatio: m.peBasicExclExtraTTM ?? 0,
-    roe: m.returnOnEquityTTM ?? 0,
-    revenueCagr: m.revenueGrowthTTM ?? 0,
-    netMargin: m.profitMarginTTM ?? 0,
-    debtEquity: m.totalDebtToEquityTTM ?? 0,
-    marketCap: m.marketCapitalization ?? 0,
-  };
+  const peRatio = m.peBasicExclExtraTTM ?? 0;
+  const roe = m.returnOnEquityTTM ?? 0;
+  const revenueCagr = m.revenueGrowthTTM ?? 0;
+  const netMargin = m.profitMarginTTM ?? 0;
+  const debtEquity = m.totalDebtToEquityTTM ?? 0;
+  const marketCap = m.marketCapitalization ?? 0;
+  if (!peRatio && !roe && !revenueCagr && !netMargin) return null;
+  return { symbol, name: '', peRatio, roe, revenueCagr, netMargin, debtEquity, marketCap };
 }
 
 export async function fetchNews(symbols: string[]): Promise<NormalizedNewsItem[]> {
@@ -105,12 +103,14 @@ export async function fetchNews(symbols: string[]): Promise<NormalizedNewsItem[]
 }
 
 function normalizeNewsItem(article: any): NormalizedNewsItem {
-  const sentiment = article.sentiment ?? '';
+  const sentimentLabel = (article.sentiment ?? '').toLowerCase();
   const fearScore =
-    sentiment === 'bullish' ? 15 :
-    sentiment === 'bearish' ? 75 :
-    sentiment === 'neutral' ? 50 :
-    Math.round(Math.random() * 100);
+    sentimentLabel === 'positive' || sentimentLabel === 'bullish' ? 15 :
+    sentimentLabel === 'negative' || sentimentLabel === 'bearish' ? 75 :
+    sentimentLabel === 'neutral' ? 50 :
+    typeof article.sentimentScore === 'number'
+      ? Math.round((1 - article.sentimentScore) * 100)
+      : 50;
   return {
     id: String(article.id ?? Math.random()),
     headline: article.headline ?? '',

@@ -64,10 +64,10 @@ function MainContent({ symA, symB, onChangeA, onChangeB, scorecardMap, mounted, 
     : { leader: symB, lVal: fmt(b.roe, 1), fVal: fmt(a.roe, 1) };
 
   const verdictRows = [
-    { icon: Trophy, label: "Winner", color: winnerColor, value: <><span style={{ color: winnerColor, fontWeight: 700 }}>{winner}</span><span style={{ color: U.textDim }}> \u2014 {winnerData.score}/10 AI Score</span></> },
+    { icon: Trophy, label: "Winner", color: winnerColor, value: <><span style={{ color: winnerColor, fontWeight: 700 }}>{winner}</span>            <span style={{ color: U.textDim }}>{" \u2014 "}{winnerData.score}/10 AI Score</span></> },
     { icon: BarChart3, label: "Key Edge", color: U.textMute, value: <span style={{ color: U.textDim }}>Margin <span style={{ color: winnerColor, fontWeight: 600 }}>{marginEdge.lVal}%</span><span style={{ color: U.textMute }}> vs {marginEdge.fVal}%</span>{" \u00b7 "}ROE <span style={{ color: winnerColor, fontWeight: 600 }}>{roeEdge.lVal}%</span><span style={{ color: U.textMute }}> vs {roeEdge.fVal}%</span></span> },
     { icon: Zap, label: "Action", color: U.amber, value: <span style={{ color: U.textDim }}>Stronger hold for <span style={{ color: U.text, fontWeight: 600 }}>12-month</span> horizon. {winner === "AAPL" || winner === "GOOGL" || winner === "META" ? "Valuation is attractive relative to growth." : "Premium justified by structural tailwinds."}</span> },
-    { icon: AlertTriangle, label: "Risk", color: U.rose, value: <span style={{ color: U.textDim }}><span style={{ color: U.rose, fontWeight: 600 }}>{loser}</span> \u2014 {loserData.verdict.toLowerCase()}. P/E {loserData.pe}\u00d7 warrants position-sizing discipline.</span> },
+    { icon: AlertTriangle, label: "Risk", color: U.rose, value: <span style={{ color: U.textDim }}><span style={{ color: U.rose, fontWeight: 600 }}>{loser}</span>{" \u2014 "}{loserData.verdict.toLowerCase()}. P/E {loserData.pe}{"\u00d7"} warrants position-sizing discipline.</span> },
   ];
 
   return (
@@ -108,7 +108,7 @@ function MainContent({ symA, symB, onChangeA, onChangeB, scorecardMap, mounted, 
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
         <GlassCard style={{ padding: "20px 22px", display: "flex", flexDirection: "column" }}>
-          <SectionTitle>Radar \u2014 6 Dimensions</SectionTitle>
+          <SectionTitle>Radar{" \u2014 "}6 Dimensions</SectionTitle>
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
             {mounted ? (
               <ResponsiveContainer width="100%" height={320}>

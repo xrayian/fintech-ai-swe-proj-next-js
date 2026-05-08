@@ -7,6 +7,7 @@ import { ErrorMessage } from '@/components/shared/error-message';
 export function SectorHeatmap() {
   const [sectors, setSectors] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -23,6 +24,8 @@ export function SectorHeatmap() {
         setError(null);
       } catch (e) {
         if (mounted) setError(e instanceof Error ? e.message : 'Sector data unavailable');
+      } finally {
+        if (mounted) setLoaded(true);
       }
     };
     load();
@@ -30,14 +33,18 @@ export function SectorHeatmap() {
     return () => { mounted = false; clearInterval(iv); };
   }, []);
 
-  if (error && !sectors.length) {
-    return <ErrorMessage message={error + " — retrying every 60s"} compact />;
+  if (!loaded) {
+    return (
+      <div style={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', color: U.textMute, fontSize: 11 }}>
+        Loading sectors...
+      </div>
+    );
   }
 
   if (!sectors.length) {
     return (
       <div style={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', color: U.textMute, fontSize: 11 }}>
-        Loading sectors...
+        Sector data unavailable &mdash; N/A
       </div>
     );
   }

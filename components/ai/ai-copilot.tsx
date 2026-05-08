@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Sparkles, Bot, Send, Star, ChevronDown, ChevronRight, X, Lightbulb } from 'lucide-react';
-import { U, SCORECARD, QUICK_PROMPTS } from '@/lib/constants';
+import { Sparkles, Bot, Send, Star, Search as SearchIcon, Lightbulb } from 'lucide-react';
+import { U, SCORECARD } from '@/lib/constants';
 import { computeScorecard, type ScorecardData } from '@/lib/scorecard-utils';
 import type { NormalizedFundamentals } from '@/lib/providers/types';
 import { SP500_TOP100 } from '@/lib/symbols/sp500-top100';
@@ -24,6 +24,7 @@ export default function AICopilot() {
   const [exp, se] = useState<string | null>(null);
   const [inputFocus, sif] = useState(false);
   const [streamBuf, sst] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [fundamentalsMap, setFundamentalsMap] = useState<Record<string, NormalizedFundamentals>>({});
   const bot = useRef<HTMLDivElement>(null);
   const inpRef = useRef<HTMLTextAreaElement>(null);
@@ -51,6 +52,31 @@ export default function AICopilot() {
   }, [fundamentalsMap]);
 
   useEffect(() => { bot.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
+
+  const dynamicPrompts = useMemo(() => {
+    const entries = Object.entries(scorecardMap);
+    if (!entries.length) return [];
+    const byScore = [...entries].sort((a, b) => b[1].score - a[1].score);
+    const top = byScore.slice(0, 3);
+    const prompts: string[] = [];
+    if (top.length >= 2) {
+      prompts.push(`Compare ${top[0][0]} vs ${top[1][0]}`);
+    }
+    if (top.length >= 1) {
+      prompts.push(`Is ${top[0][0]} wise to invest right now?`);
+    }
+    if (top.length >= 3) {
+      prompts.push(`What's the risk on ${top[2][0]}?`);
+    }
+    if (entries.length > 1) {
+      prompts.push(`Which stock has the best fundamentals?`);
+    }
+    const worst = byScore[byScore.length - 1];
+    if (worst && worst[1].score < 6) {
+      prompts.push(`Why is ${worst[0]} rated low?`);
+    }
+    return prompts.slice(0, 6);
+  }, [scorecardMap]);
 
   const send = useCallback(async (overrideText?: string) => {
     const text = overrideText ?? inp;
@@ -137,12 +163,28 @@ export default function AICopilot() {
           }}>
             <Star size={10} color={U.violet} /> Scorecards
           </div>
-          <div style={{ fontSize: 11, color: U.textFaint }}>AI-scored investment signals</div>
+          <div style={{ fontSize: 11, color: U.textFaint, marginBottom: 8 }}>AI-scored investment signals</div>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 6, background: U.glassLo,
+            border: `1px solid ${searchQuery ? U.violet : U.border}`, borderRadius: 8, padding: "6px 10px",
+            transition: "all .15s"
+          }}>
+            <SearchIcon size={11} color={searchQuery ? U.violet : U.textMute} />
+            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Filter tickers..."
+              style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: U.text, fontSize: 11 }}
+            />
+          </div>
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "12px 12px" }}>
-          {Object.entries(scorecardMap).map(([sym, d]) => (
+          {Object.entries(scorecardMap)
+            .filter(([sym, d]) => !searchQuery.trim() || sym.toLowerCase().includes(searchQuery.toLowerCase()) || d.name.toLowerCase().includes(searchQuery.toLowerCase()))
+            .map(([sym, d]) => (
             <ScoreCard key={sym} ticker={sym} data={d} expanded={exp === sym} onToggle={() => se(exp === sym ? null : sym)} />
           ))}
+          {searchQuery && Object.entries(scorecardMap).filter(([sym, d]) => sym.toLowerCase().includes(searchQuery.toLowerCase()) || d.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+            <div style={{ padding: "20px", textAlign: "center", fontSize: 11, color: U.textMute }}>No matching tickers</div>
+          )}
         </div>
         <div style={{ padding: "10px 14px", borderTop: `1px solid ${U.border}`, flexShrink: 0, background: "rgba(5,5,8,0.4)" }}>
           <div style={{ fontSize: 10, color: U.textFaint, lineHeight: 1.5, display: "flex", alignItems: "flex-start", gap: 6 }}>
@@ -251,7 +293,7 @@ export default function AICopilot() {
 
         <div className="chip-scroll" style={{ padding: "8px 16px", borderTop: `1px solid ${U.border}`, display: "flex", gap: 6, overflowX: "auto", flexShrink: 0, background: "rgba(5,5,8,0.4)" }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: U.textFaint, textTransform: "uppercase", letterSpacing: "0.12em", flexShrink: 0, alignSelf: "center", marginRight: 4 }}>Quick:</div>
-          {QUICK_PROMPTS.map(p => (
+          {dynamicPrompts.map(p => (
             <button key={p} onClick={() => send(p)} style={{
               padding: "5px 12px", borderRadius: 999, border: `1px solid ${U.border}`, background: U.glassLo, color: U.textDim, cursor: "pointer",
               fontSize: 11, fontWeight: 500, whiteSpace: "nowrap", flexShrink: 0, transition: "all .15s",

@@ -15,11 +15,16 @@ interface ScoreCardProps {
 }
 
 function generateCoach(d: ScorecardData, ticker: string): string {
-  const marginDesc = d.margin > 35 ? 'exceptional' : d.margin > 20 ? 'strong' : d.margin > 10 ? 'healthy' : 'moderate';
-  const growthDesc = d.cagr > 50 ? 'exceptional' : d.cagr > 20 ? 'strong' : d.cagr > 10 ? 'steady' : d.cagr > 5 ? 'moderate' : 'slowing';
-  const debtDesc = d.de < 0.3 ? 'minimal' : d.de < 1 ? 'conservative' : d.de < 2 ? 'moderate' : 'elevated';
-  const valDesc = d.pe < 15 ? 'attractive' : d.pe < 25 ? 'fair' : d.pe < 40 ? 'premium' : 'stretched';
-  return `${d.name} shows a ${d.verdict.toLowerCase()} signal with AI Score ${d.score}/10. At ${d.pe}× P/E (${valDesc}), the ${d.tag.toLowerCase()} profile is supported by ${marginDesc} margins (${d.margin}%) and ${growthDesc} revenue growth (${d.cagr}% CAGR). ROE of ${d.roe}% and ${debtDesc} leverage (${d.de}× D/E) suggest ${d.roe > 30 ? 'efficient capital deployment' : 'room for operational improvement'}. Position sizing should reflect the ${d.score >= 7.5 ? 'favorable' : 'cautious'} risk/reward profile.`;
+  const peStr = d.pe ? `${d.pe.toFixed(1)}\u00d7` : 'N/A';
+  const marginStr = d.margin ? `${d.margin}%` : 'N/A';
+  const cagrStr = d.cagr ? `${d.cagr}%` : 'N/A';
+  const roeStr = d.roe ? `${d.roe}%` : 'N/A';
+  const deStr = d.de ? `${d.de.toFixed(2)}\u00d7` : 'N/A';
+  const marginDesc = d.margin > 35 ? 'exceptional' : d.margin > 20 ? 'strong' : d.margin > 10 ? 'healthy' : d.margin ? 'moderate' : 'unavailable';
+  const growthDesc = d.cagr > 50 ? 'exceptional' : d.cagr > 20 ? 'strong' : d.cagr > 10 ? 'steady' : d.cagr > 5 ? 'moderate' : d.cagr ? 'slowing' : 'unavailable';
+  const debtDesc = d.de < 0.3 ? 'minimal' : d.de < 1 ? 'conservative' : d.de < 2 ? 'moderate' : d.de ? 'elevated' : 'unavailable';
+  const valDesc = d.pe < 15 ? 'attractive' : d.pe < 25 ? 'fair' : d.pe < 40 ? 'premium' : d.pe ? 'stretched' : 'unavailable';
+  return `${d.name} shows a ${d.verdict.toLowerCase()} signal with AI Score ${d.score}/10. At ${peStr} P/E (${valDesc}), the ${d.tag.toLowerCase()} profile is supported by ${marginDesc} margins (${marginStr}) and ${growthDesc} revenue growth (${cagrStr} CAGR). ROE of ${roeStr} and ${debtDesc} leverage (${deStr} D/E) suggest ${d.roe > 30 ? 'efficient capital deployment' : 'room for operational improvement'}. Position sizing should reflect the ${d.score >= 7.5 ? 'favorable' : 'cautious'} risk/reward profile.`;
 }
 
 export function ScoreCard({ ticker, data, expanded, onToggle }: ScoreCardProps) {

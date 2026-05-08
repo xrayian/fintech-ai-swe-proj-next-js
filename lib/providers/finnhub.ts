@@ -4,7 +4,10 @@ import {
 } from './types';
 
 const BASE = 'https://finnhub.io/api/v1';
-const KEY = () => process.env.FINNHUB_API_KEY || '';
+const KEYS = () => [
+  process.env.FINNHUB_API_KEY,
+  process.env.FINNHUB_API_KEY_2,
+].filter(Boolean) as string[];
 
 export function isRateLimited(err: unknown): boolean {
   if (err instanceof FinnhubError && err.status === 429) return true;
@@ -20,9 +23,15 @@ export class FinnhubError extends Error {
   }
 }
 
-async function fetchJson(path: string): Promise<any> {
-  const url = `${BASE}${path}${path.includes('?') ? '&' : '?'}token=${KEY()}`;
+async function fetchJson(path: string, keyIndex = 0): Promise<any> {
+  const keys = KEYS();
+  const key = keys[keyIndex];
+  if (!key) throw new FinnhubError('No API key configured', 401);
+  const url = `${BASE}${path}${path.includes('?') ? '&' : '?'}token=${key}`;
   const res = await fetch(url);
+  if (res.status === 429 && keyIndex < keys.length - 1) {
+    return fetchJson(path, keyIndex + 1);
+  }
   if (!res.ok) throw new FinnhubError(`Finnhub ${res.status}: ${res.statusText}`, res.status);
   return res.json();
 }

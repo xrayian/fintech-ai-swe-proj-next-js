@@ -14,8 +14,7 @@ const CandleChart = dynamic(() => import('./candle-chart').then(m => m.CandleCha
   loading: () => <div style={{ height: 340, display: 'flex', alignItems: 'center', justifyContent: 'center', color: U.textMute }}>Loading Chart...</div>
 });
 
-const RES_MAP: Record<string, string> = { "1D": "15", "1W": "D", "1M": "D", "3M": "D", "1Y": "W" };
-const CNT_MAP: Record<string, number> = { "1D": 48, "1W": 5, "1M": 30, "3M": 90, "1Y": 52 };
+const CNT_MAP: Record<string, number> = { "1D": 5, "1W": 10, "1M": 22, "3M": 66, "1Y": 100 };
 
 function ema(arr: number[], p: number): number | null {
   if (arr.length < p) return null;
@@ -109,10 +108,15 @@ export default function TechnicalSuite() {
     }, 200);
   }, [searchQuery]);
   const [tf, setTf] = useState("1M");
-  const [candles, setCandles] = useState<any[]>([]);
+  const [allCandles, setAllCandles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+
+  const candles = useMemo(() => {
+    const n = CNT_MAP[tf] || 22;
+    return allCandles.slice(-n);
+  }, [allCandles, tf]);
 
   useEffect(() => {
     let mounted = true;
@@ -120,14 +124,14 @@ export default function TechnicalSuite() {
     setError(null);
     const load = async () => {
       try {
-        const res = await fetch(`/api/market/candles?symbol=${sel}&resolution=${RES_MAP[tf]}&count=${CNT_MAP[tf]}`);
+        const res = await fetch(`/api/market/candles?symbol=${sel}`);
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(body?.error || 'Candle data unavailable');
         }
         const data = await res.json();
         if (!mounted) return;
-        setCandles(data.map((x: any) => ({ ...x, bullish: x.close >= x.open })));
+        setAllCandles(data.map((x: any) => ({ ...x, bullish: x.close >= x.open })));
         setError(null);
         setLastRefreshed(new Date());
       } catch (e) {
@@ -137,9 +141,8 @@ export default function TechnicalSuite() {
       }
     };
     load();
-    const iv = setInterval(load, 30000);
-    return () => { mounted = false; clearInterval(iv); };
-  }, [sel, tf]);
+    return () => { mounted = false; };
+  }, [sel]);
 
   const inds = useMemo(() => computeIndicators(candles), [candles]);
   const lastC = candles.length ? candles[candles.length - 1].close : null;
@@ -265,9 +268,8 @@ export default function TechnicalSuite() {
               fontSize: 9, fontWeight: 700, color: U.up, background: U.emeraldSoft,
               padding: "3px 10px", borderRadius: 999,
               border: "1px solid rgba(52,211,153,0.28)", letterSpacing: "0.07em",
-              animation: "pulse-dot 2.5s ease infinite",
               display: "flex", alignItems: "center", gap: 5
-            }}><Circle size={6} fill={U.up} /> LIVE 30s</span>
+            }}><Circle size={6} fill={U.up} /> CACHED</span>
           )}
           {chg != null && (
             <span style={{
@@ -285,7 +287,7 @@ export default function TechnicalSuite() {
         </div>
         {error && !candles.length && (
           <div style={{ marginBottom: 8 }}>
-            <ErrorMessage message={error + " — retrying every 30s"} />
+            <ErrorMessage message={error} />
           </div>
         )}
         <CandleChart data={candles} loading={loading} />

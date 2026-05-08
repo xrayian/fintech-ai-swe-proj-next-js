@@ -32,7 +32,7 @@ export function useLiveTickers() {
   useEffect(() => {
     if (!ready || !watchlist.length) return;
     mounted.current = true;
-    const chunkSize = 10;
+    const chunkSize = 5;
 
     const poll = async () => {
       const chunk = watchlist.slice(cursorRef.current, cursorRef.current + chunkSize);

@@ -4,7 +4,12 @@ import {
 } from './types';
 
 const BASE = 'https://www.alphavantage.co/query';
-const KEY = () => process.env.ALPHA_VANTAGE_API_KEY || '';
+const KEYS = () => [
+  process.env.ALPHA_VANTAGE_API_KEY,
+  process.env.ALPHA_VANTAGE_API_KEY_2,
+  process.env.ALPHA_VANTAGE_API_KEY_3,
+  process.env.ALPHA_VANTAGE_API_KEY_4,
+].filter(Boolean) as string[];
 
 class AlphaVantageError extends Error {
   status: number;
@@ -15,17 +20,31 @@ class AlphaVantageError extends Error {
   }
 }
 
-async function fetchJson(params: Record<string, string>): Promise<any> {
-  const qs = new URLSearchParams({ ...params, apikey: KEY() }).toString();
+function isRateLimited(data: any): boolean {
+  return !!(
+    (data.Note && data.Note.includes('API call frequency')) ||
+    (data.Information && data.Information.includes('rate limit'))
+  );
+}
+
+async function fetchJson(params: Record<string, string>, keyIndex = 0): Promise<any> {
+  const keys = KEYS();
+  const key = keys[keyIndex];
+  if (!key) throw new AlphaVantageError('No API key configured', 401);
+  const qs = new URLSearchParams({ ...params, apikey: key }).toString();
   const url = `${BASE}?${qs}`;
+  console.warn('[AV]', params.function, params.symbol || '', `key=${keyIndex + 1}/${keys.length}`);
   const res = await fetch(url);
   if (!res.ok) throw new AlphaVantageError(`Alpha Vantage ${res.status}: ${res.statusText}`, res.status);
   const data = await res.json();
-  if (data.Note && data.Note.includes('API call frequency')) {
-    throw new AlphaVantageError('Rate limited', 429);
+  if (isRateLimited(data) && keyIndex < keys.length - 1) {
+    return fetchJson(params, keyIndex + 1);
   }
   if (data['Error Message']) {
     throw new AlphaVantageError(data['Error Message'], 400);
+  }
+  if (data.Information && data.Information.includes('rate limit')) {
+    throw new AlphaVantageError('All API keys rate limited', 429);
   }
   return data;
 }

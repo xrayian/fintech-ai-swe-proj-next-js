@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const { messages } = await request.json();
+  const { messages, symbols } = await request.json();
   if (!messages?.length) {
     return new Response(JSON.stringify({ error: 'No messages provided' }), {
       status: 400,
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
   const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user');
   const entities = extractEntities(lastUserMsg?.content || '');
-  const context = await buildContext(entities);
+  const context = await buildContext(entities, symbols);
 
   const contents = messages.map((m: any) => ({
     role: m.role === 'assistant' ? 'model' : 'user',

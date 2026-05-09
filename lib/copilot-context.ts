@@ -35,19 +35,21 @@ function priceLine(sym: string, q: { price: number; change: number; changePercen
   return `${sym}: $${q.price.toFixed(2)} · ${q.change >= 0 ? '+' : ''}${q.change.toFixed(2)} (${q.changePercent >= 0 ? '+' : ''}${q.changePercent.toFixed(2)}%)`;
 }
 
-export async function buildContext(entities: Entities): Promise<string> {
+export async function buildContext(entities: Entities, extraSymbols?: string[]): Promise<string> {
   const { tickers, intent } = entities;
   const parts: string[] = [SYSTEM_PERSONA];
   const dataParts: string[] = [];
 
-  if (tickers.length > 0) {
+  const allSymbols = [...new Set([...tickers, ...(extraSymbols || [])])];
+
+  if (allSymbols.length > 0) {
     const [fundamentals, quotes] = await Promise.all([
-      Promise.allSettled(tickers.map(s => fetchFundamentals(s))),
-      Promise.allSettled(tickers.map(s => fetchQuote([s]).then(q => q[0] || null))),
+      Promise.allSettled(allSymbols.map(s => fetchFundamentals(s))),
+      Promise.allSettled(allSymbols.map(s => fetchQuote([s]).then(q => q[0] || null))),
     ]);
 
     const fundLines: string[] = [];
-    for (const [i, sym] of tickers.entries()) {
+    for (const [i, sym] of allSymbols.entries()) {
       const r = fundamentals[i];
       if (r.status === 'fulfilled' && r.value) {
         fundLines.push(fundamentalsLine(sym, r.value));
@@ -58,7 +60,7 @@ export async function buildContext(entities: Entities): Promise<string> {
     }
 
     const priceLines: string[] = [];
-    for (const [i, sym] of tickers.entries()) {
+    for (const [i, sym] of allSymbols.entries()) {
       const r = quotes[i];
       if (r.status === 'fulfilled' && r.value) {
         priceLines.push(priceLine(sym, r.value));

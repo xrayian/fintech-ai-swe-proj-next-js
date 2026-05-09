@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Sparkles, Bot, Send, Star, Search as SearchIcon, Lightbulb, Loader2, MessageSquare, BarChart3 } from 'lucide-react';
+import { Sparkles, Bot, Send, Star, Search as SearchIcon, Lightbulb, Loader2, MessageSquare, BarChart3, Plus, X } from 'lucide-react';
 import { U, SCORECARD } from '@/lib/constants';
 import { computeScorecard, type ScorecardData } from '@/lib/scorecard-utils';
 import type { NormalizedFundamentals } from '@/lib/providers/types';
@@ -124,7 +124,7 @@ export default function AICopilot() {
       const res = await fetch('/api/copilot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [...msgs, um] }),
+        body: JSON.stringify({ messages: [...msgs, um], symbols: Object.keys(scorecardMap) }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -187,6 +187,7 @@ export default function AICopilot() {
           <SearchIcon size={11} color={searchQuery ? U.violet : U.textMute} />
           <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search any symbol..." style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: U.text, fontSize: 11 }} />
           {searching && <Loader2 size={11} color={U.textMute} style={{ animation: "spin 1s linear infinite" }} />}
+          {searchQuery && !searching && <X size={12} color={U.textMute} style={{ cursor: "pointer", flexShrink: 0 }} onClick={() => { setSearchQuery(''); setSearchResults([]); }} />}
         </div>
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "8px 10px" : "12px 12px" }}>
@@ -209,7 +210,7 @@ export default function AICopilot() {
                     <div style={{ fontSize: 10, color: U.textMute, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</div>
                   </div>
                   {loading ? <Loader2 size={12} color={U.cyan} style={{ animation: "spin 1s linear infinite" }} />
-                    : <span style={{ fontSize: 9, color: U.cyan, background: U.cyanSoft, padding: "3px 8px", borderRadius: 999, fontWeight: 600, flexShrink: 0 }}>Load</span>}
+                    : <span style={{ width: 26, height: 26, borderRadius: 8, background: U.cyanSoft, border: `1px solid rgba(34,211,238,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}><Plus size={13} color={U.cyan} /></span>}
                 </div>
               );
             })}

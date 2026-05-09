@@ -50,7 +50,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ toast: addToast }}>
       {children}
       <div style={{
-        position: 'fixed', bottom: 20, right: 20, zIndex: 9999,
+        position: 'fixed', bottom: "var(--toast-bottom)" as any, right: 20, zIndex: 9999,
         display: 'flex', flexDirection: 'column', gap: 8,
         maxWidth: 360, width: '100%', pointerEvents: 'none',
       }}>

@@ -18,24 +18,41 @@ export const NAV = [
 
 interface SidebarProps {
   open: boolean;
+  mobile?: boolean;
+  onClose?: () => void;
 }
 
-export function Sidebar({ open }: SidebarProps) {
+export function Sidebar({ open, mobile, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { online, marketOpen, timestamp } = useMarketStatus();
+  const openW = open ? 'var(--sidebar-w)' : '0px';
 
   return (
-    <div style={{
-      width: open ? 218 : 0, minWidth: open ? 218 : 0, overflow: "hidden", flexShrink: 0,
-      transition: "width .22s ease,min-width .22s ease", position: "relative", zIndex: 10
-    }}>
+    <>
+      {mobile && open && (
+        <div onClick={onClose} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+          zIndex: 20, animation: "fi .15s ease",
+        }} />
+      )}
       <div style={{
-        width: 218, height: "100%", display: "flex", flexDirection: "column",
-        background: "rgba(5,5,8,0.85)",
-        backdropFilter: "blur(30px) saturate(160%)",
-        WebkitBackdropFilter: "blur(30px) saturate(160%)",
-        borderRight: `1px solid ${U.border}`
+        width: mobile ? (open ? 218 : 0) : (openW as any),
+        minWidth: mobile ? (open ? 218 : 0) : (openW as any),
+        overflow: "hidden", flexShrink: 0,
+        transition: "width .22s ease,min-width .22s ease",
+        position: mobile ? "fixed" : "relative",
+        left: mobile ? 0 : undefined, top: mobile ? 0 : undefined,
+        bottom: mobile ? 0 : undefined,
+        zIndex: mobile ? 21 : 10,
+        background: mobile ? "rgba(5,5,8,0.96)" : undefined,
       }}>
+        <div style={{
+          width: 218, height: "100%", display: "flex", flexDirection: "column",
+          background: "rgba(5,5,8,0.85)",
+          backdropFilter: "blur(30px) saturate(160%)",
+          WebkitBackdropFilter: "blur(30px) saturate(160%)",
+          borderRight: `1px solid ${U.border}`
+        }}>
 
         {/* Brand */}
         <div style={{ padding: "22px 20px 18px", borderBottom: `1px solid ${U.border}`, position: "relative" }}>
@@ -113,5 +130,6 @@ export function Sidebar({ open }: SidebarProps) {
         </div>
       </div>
     </div>
+    </>
   );
 }

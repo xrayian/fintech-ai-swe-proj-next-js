@@ -18,7 +18,7 @@ const SectorHeatmap = dynamic(() => import('./sector-heatmap').then(m => m.Secto
 function SkeletonCard() {
   return (
     <div style={{
-      flex: 1, minWidth: 148, padding: "16px 18px", borderRadius: 14,
+      flex: 1, minWidth: "var(--kpi-min-w)" as any, padding: "16px 18px", borderRadius: 14,
       background: U.glass, border: `1px solid ${U.border}`,
       overflow: "hidden", position: "relative",
     }}>
@@ -134,7 +134,7 @@ export default function Dashboard() {
           ))
         )}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "var(--grid-2)" as any, gap: 14 }}>
         <GlassCard style={{ padding: "16px 18px" }}>
           <SectionTitle icon={Globe}>Global Sector Heatmap</SectionTitle>
           <SectorHeatmap />

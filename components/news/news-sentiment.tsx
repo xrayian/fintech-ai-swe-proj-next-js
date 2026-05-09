@@ -57,7 +57,7 @@ export default function NewsSentiment() {
           { l: "Bearish Articles", v: total ? `${Math.round(bearish / total * 100)}%` : "—", s: total ? `${bearish} of ${total}` : "—", accent: U.rose },
           { l: "AI Processed", v: total ? String(total) : "—", s: "today", accent: U.violet },
         ].map(k => (
-          <GlassCard key={k.l} style={{ padding: "14px 18px", flex: 1, minWidth: 120, position: "relative", overflow: "hidden" }}>
+          <GlassCard key={k.l} style={{ padding: "14px 18px", flex: 1, minWidth: "var(--kpi-min-w)" as any, position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg,transparent,${k.accent},transparent)` }} />
             <div style={{ fontSize: 9, fontWeight: 600, color: U.textMute, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 6 }}>{k.l}</div>
             <div style={{ fontSize: 22, fontWeight: 700, color: U.text, fontFamily: 'JetBrains Mono', lineHeight: 1.1 }}>{k.v}</div>
@@ -94,7 +94,7 @@ export default function NewsSentiment() {
               </div>
               {isE && (
                 <div style={{ borderTop: `1px solid ${U.border}`, padding: "13px 16px", animation: "fi .2s ease" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginBottom: 12 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "var(--grid-2)" as any, gap: 7, marginBottom: 12 }}>
                     {[["Fear Score", item.fearScore + "/100"], ["Sentiment", item.sentiment], ["Match Quality", item.fearScore > 0 && item.fearScore < 100 ? "High" : "Medium"], ["Market Impact", item.fearScore > 60 ? "Elevated Risk" : "Moderate"]].map(([k, v]) => (
                       <div key={k} style={{ background: U.glassLo, border: `1px solid ${U.border}`, borderRadius: 8, padding: "8px 11px" }}>
                         <div style={{ fontSize: 9, color: U.textMute, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>{k}</div>

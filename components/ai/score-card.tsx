@@ -56,7 +56,7 @@ export function ScoreCard({ ticker, data, expanded, onToggle }: ScoreCardProps) 
       </div>
       {expanded && (
         <div style={{ borderTop: `1px solid ${U.border}`, padding: "14px 16px", animation: "fi .22s ease" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 7, marginBottom: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "var(--grid-3)" as any, gap: 7, marginBottom: 12 }}>
             {[
               { l: "P/E Ratio", v: fmt(data.pe) + "×", n: data.pe < 35 ? "Fairly Valued" : "Premium" },
               { l: "ROE", v: fmt(data.roe) + "%", n: data.roe > 30 ? "Exceptional" : "Average" },

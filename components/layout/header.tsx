@@ -49,12 +49,13 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 style={{
-            margin: 0, fontSize: 18, fontWeight: 700, color: U.text,
+            margin: 0, fontSize: "var(--header-title-s)" as any, fontWeight: 700, color: U.text,
             letterSpacing: "-0.025em", lineHeight: 1.2
           }}>{activeNav.label}</h1>
           <div style={{
             fontSize: 11, color: U.textMute, marginTop: 2,
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            visibility: "var(--header-sub-vis)" as any,
           }}>{sub}</div>
         </div>
         <div style={{ display: "flex", gap: 7, flexShrink: 0 }}>

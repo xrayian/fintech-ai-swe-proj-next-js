@@ -21,7 +21,7 @@ export function KpiCard({ label, value, sub, trend, accent }: KpiCardProps) {
       onMouseLeave={() => sh(false)}
       className="glow-hover"
       style={{
-        padding: "16px 18px", flex: 1, minWidth: 148, position: "relative", overflow: "hidden",
+        padding: "16px 18px", flex: 1, minWidth: "var(--kpi-min-w)" as any, position: "relative", overflow: "hidden",
         transition: "all .2s", background: h ? U.glassHi : U.glass, borderColor: h ? U.borderHi : U.border
       }}
     >

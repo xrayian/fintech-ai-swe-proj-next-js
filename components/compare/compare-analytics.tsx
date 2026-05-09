@@ -106,7 +106,7 @@ function MainContent({ symA, symB, onChangeA, onChangeB, scorecardMap, mounted, 
         </div>
       </GlassCard>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "var(--grid-2)" as any, gap: 14 }}>
         <GlassCard style={{ padding: "20px 22px", display: "flex", flexDirection: "column" }}>
           <SectionTitle>Radar{" \u2014 "}6 Dimensions</SectionTitle>
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -289,7 +289,7 @@ export default function CompareAnalytics({ initialSymbol }: { initialSymbol?: st
     <div style={{ animation: "fi .25s ease" }}>
       <div style={{ marginBottom: 16 }}>
         <SectionTitle icon={BarChart2}>Select two stocks to compare</SectionTitle>
-        <div style={{ display: "flex", gap: 12, alignItems: "flex-start", position: "relative" }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "var(--compare-align)" as any, position: "relative", flexDirection: "var(--col-dir)" as any }}>
           <StockSelector value={symA} onChange={handleChangeA} exclude={symB} accent={U.cyan} accentRgb="34,211,238" label="Stock A" isWinner={!!hasData && (scorecardMap[symA]?.score ?? 0) >= (scorecardMap[symB]?.score ?? 0)} options={scorecardMap} />
           <div style={{ flexShrink: 0, alignSelf: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
             <div style={{ width: 36, height: 36, borderRadius: "50%", background: U.glass, border: `1px solid ${U.borderHi}`, backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: U.textMute }}>VS</div>

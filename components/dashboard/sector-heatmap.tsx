@@ -51,7 +51,7 @@ export function SectorHeatmap() {
 
   const mx = Math.max(...sectors.map(s => Math.abs(s.chg || 1)), 1);
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 6 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "var(--grid-5)" as any, gap: 6 }}>
       {sectors.map(s => {
         const up = (s.chg || 0) >= 0;
         const int = Math.min(Math.abs(s.chg || 0) / mx, 1);

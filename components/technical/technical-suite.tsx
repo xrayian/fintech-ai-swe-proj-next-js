@@ -299,7 +299,7 @@ export default function TechnicalSuite() {
       {error && !candles.length ? (
         <ErrorMessage message={error + " — indicators unavailable without chart data"} compact />
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "var(--grid-3)" as any, gap: 8 }}>
           {indicatorCards.map(ind => (
             <GlassCard key={ind.l} style={{ padding: "12px 14px", position: "relative", overflow: "hidden" }}>
               <div style={{

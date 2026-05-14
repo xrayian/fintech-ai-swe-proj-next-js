@@ -59,7 +59,7 @@ export default function RootLayout({
           {isMobile && (
             <div style={{
               position: "fixed", bottom: 0, left: 0, right: 0, height: "var(--bottom-nav-h)" as any,
-              background: "var(--bg-deep)", backdropFilter: "blur(30px) saturate(160%)",
+              background: U.navBg, backdropFilter: "blur(30px) saturate(160%)",
               WebkitBackdropFilter: "blur(30px) saturate(160%)",
               borderTop: `1px solid ${U.border}`,
               display: "flex", alignItems: "center", justifyContent: "space-around",

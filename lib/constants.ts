@@ -22,6 +22,8 @@ export const U = {
   roseSoft:    "var(--rose-soft)",
   up:          "var(--up)",
   down:        "var(--down)",
+  navBg:       "var(--nav-bg)",
+  headerBg:    "var(--header-bg)",
 };
 
 export const TICKERS = [

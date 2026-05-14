@@ -1,10 +1,85 @@
-import {
-  fetchFundamentals, fetchQuote, fetchNews, fetchSectors,
-} from '@/lib/providers/orchestrator';
+import { fetchFundamentals, fetchQuote, fetchNews, fetchSectors, } from '@/lib/providers/orchestrator';
 import { SP500_TOP100 } from '@/lib/symbols/sp500-top100';
+import ALL_SYMBOLS from '@/lib/symbols/stock-symbols.json';
 import type { NormalizedFundamentals } from '@/lib/providers/types';
 
-const ENTITY_SYMBOLS = SP500_TOP100.slice(0, 50).map(s => s.sym);
+const ENTITY_SYMBOLS = ALL_SYMBOLS.map(s => s.sym);
+
+// Bangladeshi Common Names & Tickers
+const BD_SYMBOLS = [
+  { sym: "GP", name: "grameenphone" },
+  { sym: "ROBI", name: "robi" },
+  { sym: "BEXIMCO", name: "beximco" },
+  { sym: "BATBC", name: "batbc" },
+  { sym: "SQUAREPHARMA", name: "square pharma" },
+  { sym: "WALTONHIL", name: "walton" },
+  { sym: "BRACBANK", name: "brac bank" },
+  { sym: "CITYBANK", name: "city bank" },
+  { sym: "IDLC", name: "idlc" },
+  { sym: "SUMMITPWR", name: "summit power" },
+  { sym: "LHBL", name: "lafargeholcim" },
+  { sym: "RENATA", name: "renata" },
+  { sym: "BERGERPBL", name: "berger paints" },
+  { sym: "UPGDCL", name: "united power" },
+  { sym: "MJLBD", name: "mjl bangladesh" },
+  { sym: "OLYMPIC", name: "olympic industries" },
+  { sym: "EBL", name: "eastern bank" },
+  { sym: "IBBL", name: "islami bank" },
+  { sym: "DBBL", name: "dutch-bangla bank" },
+  { sym: "AMCLPRAN", name: "pran" },
+  { sym: "BPML", name: "bashundhara paper" },
+  { sym: "ACI", name: "aci limited" },
+  { sym: "TITASGAS", name: "titas gas" },
+  { sym: "BSRMLTD", name: "bsrm" },
+];
+
+// Major Global International Companies (100+ Total Coverage)
+const GLOBAL_SYMBOLS = [
+  { sym: "TSM", name: "tsmc" }, { sym: "SONY", name: "sony" }, { sym: "SHOP", name: "shopify" },
+  { sym: "SAP", name: "sap" }, { sym: "NVO", name: "novo nordisk" }, { sym: "AZN", name: "astrazeneca" },
+  { sym: "HSBC", name: "hsbc" }, { sym: "RYCEY", name: "rolls-royce" }, { sym: "BUD", name: "anheuser-busch" },
+  { sym: "BP", name: "bp" }, { sym: "SNY", name: "sanofi" }, { sym: "SHEL", name: "shell" },
+  { sym: "ASML", name: "asml" }, { sym: "HDB", name: "hdfc bank" }, { sym: "IBN", name: "icici bank" },
+  { sym: "INFY", name: "infosys" }, { sym: "WIT", name: "wipro" }, { sym: "ERIC", name: "ericsson" },
+  { sym: "NOK", name: "nokia" }, { sym: "SPOT", name: "spotify" }, { sym: "RACE", name: "ferrari" },
+  { sym: "STLA", name: "stellantis" }, { sym: "VWAGY", name: "volkswagen" }, { sym: "BMWYY", name: "bmw" },
+  { sym: "DMLRY", name: "mercedes-benz" }, { sym: "HMC", name: "honda" }, { sym: "TM", name: "toyota" },
+  { sym: "MELI", name: "mercadolibre" }, { sym: "NU", name: "nubank" }, { sym: "VALE", name: "vale" },
+  { sym: "PBR", name: "petrobras" }, { sym: "AMX", name: "america movil" }, { sym: "DEO", name: "diageo" },
+  { sym: "GSK", name: "gsk" }, { sym: "UL", name: "unilever" }, { sym: "ABB", name: "abb" },
+  { sym: "UBS", name: "ubs" }, { sym: "LOGI", name: "logitech" }, { sym: "ARM", name: "arm" },
+  { sym: "NTT", name: "ntt" }, { sym: "MUFG", name: "mitsubishi" }, { sym: "SMFG", name: "sumitomo" },
+  { sym: "NMR", name: "nomura" }, { sym: "MFG", name: "mizuho" }, { sym: "BHP", name: "bhp" },
+  { sym: "RIO", name: "rio tinto" }, { sym: "BTI", name: "british american tobacco" }, { sym: "DELL", name: "dell" },
+  { sym: "SEA", name: "sea limited" }, { sym: "GRAB", name: "grab" }, { sym: "DIDI", name: "didi" },
+  { sym: "TTE", name: "totalenergies" }, { sym: "E", name: "eni" }, { sym: "RELX", name: "relx" },
+  { sym: "SAN", name: "santander" }, { sym: "BBVA", name: "bbva" }, { sym: "ING", name: "ing group" },
+  { sym: "CS", name: "credit suisse" }, { sym: "DB", name: "deutsche bank" }, { sym: "BCS", name: "barclays" },
+  { sym: "NWG", name: "natwest" }, { sym: "LYG", name: "lloyds" }, { sym: "VOD", name: "vodafone" },
+  { sym: "ORAN", name: "orange" }, { sym: "TEF", name: "telefonica" }, { sym: "BAM", name: "brookfield" },
+  { sym: "BN", name: "brookfield corp" }, { sym: "ENGIY", name: "engie" }, { sym: "CRARY", name: "credit agricole" },
+  { sym: "ADRNY", name: "adidas" }, { sym: "LVMUY", name: "lvmh" }, { sym: "HNNMY", name: "h&m" },
+  { sym: "IDEXY", name: "inditex" }, { sym: "NSRGY", name: "nestle" }, { sym: "PUMSY", name: "puma" },
+  { sym: "AIRFP", name: "airbus" }, { sym: "DASTY", name: "dassault" }, { sym: "RHHBY", name: "roche" },
+  { sym: "NVS", name: "novartis" }, { sym: "UBS", name: "ubs group" }, { sym: "VLVLY", name: "volvo" },
+  { sym: "ALVWM", name: "allianz" }, { sym: "MUV2", name: "munich re" }, { sym: "BASFY", name: "basf" },
+  { sym: "BAYRY", name: "bayer" }, { sym: "SIEGY", name: "siemens" }, { sym: "DTEGY", name: "deutsche telekom" },
+  { sym: "TKA", name: "thyssenkrupp" }, { sym: "LHA", name: "lufthansa" }, { sym: "AIR", name: "air france" },
+  { sym: "IAG", name: "international airlines group" }, { sym: "RYAAY", name: "ryanair" },
+  { sym: "EL", name: "estee lauder" }, { sym: "CPRT", name: "copart" }, { sym: "FND", name: "floor & decor" },
+];
+
+const ENTITY_NAMES = [
+  ...ALL_SYMBOLS.map(s => {
+    const clean = s.name
+      .replace(/( Inc\.| Corp\.| Corporation| Ltd\.| Co\.| plc| Group| Platforms| Technologies| Solutions)/gi, '')
+      .trim()
+      .toLowerCase();
+    return { sym: s.sym, name: clean, firstWord: clean.split(' ')[0] };
+  }),
+  ...BD_SYMBOLS.map(s => ({ sym: s.sym, name: s.name, firstWord: s.name.split(' ')[0] })),
+  ...GLOBAL_SYMBOLS.map(s => ({ sym: s.sym, name: s.name, firstWord: s.name.split(' ')[0] }))
+];
 
 export interface Entities {
   tickers: string[];
@@ -12,8 +87,22 @@ export interface Entities {
 }
 
 export function extractEntities(msg: string): Entities {
+  const lower = msg.toLowerCase();
   const upper = msg.toUpperCase();
-  const tickers = ENTITY_SYMBOLS.filter(sym => new RegExp(`\\b${sym}\\b`).test(upper));
+  
+  // Match tickers (e.g., AAPL)
+  const tickersFromSyms = ENTITY_SYMBOLS.filter(sym => new RegExp(`\\b${sym}\\b`).test(upper));
+  
+  // Match company names (e.g., Apple, Microsoft, Uber)
+  const tickersFromNames = ENTITY_NAMES
+    .filter(e => {
+      if (lower.includes(e.name)) return true;
+      if (e.firstWord.length > 3 && new RegExp(`\\b${e.firstWord}\\b`, 'i').test(lower)) return true;
+      return false;
+    })
+    .map(e => e.sym);
+
+  const tickers = [...new Set([...tickersFromSyms, ...tickersFromNames])];
 
   const intent: Entities['intent'] =
     /\b(compare|vs\.?|versus|difference|better|which)\b/i.test(msg) ? 'compare' :

@@ -46,53 +46,53 @@ export function SupportChat() {
     setIsTyping(true);
     setStreamBuf('');
 
-    // Robust local response generator to bypass all external API limitations
-    const generateResponse = (t: string) => {
-      const q = t.toLowerCase();
-      if (q.includes('technical') || q.includes('chart') || q.includes('indicator')) return "The **Technical** page provides RSI, SMA, and Bollinger Bands for any supported ticker. You can find it in the sidebar.";
-      if (q.includes('compare') || q.includes('versus') || q.includes(' vs ')) return "Use the **Compare** tool to view two stocks side-by-side with radar charts and fundamental metrics comparison.";
-      if (q.includes('copilot') || q.includes('ai chat')) return "The **AI Copilot** uses live fundamental data to provide investment signals and deep-dive analysis on specific tickers.";
-      if (q.includes('news') || q.includes('sentiment')) return "Our **News** feed aggregates real-time headlines and provides a composite 'Fear & Greed' sentiment score for the market.";
-      if (q.includes('watchlist') || q.includes('settings') || q.includes('api')) return "You can manage your watchlist and check your API key status in the **Settings** section.";
-      if (q.includes('dashboard') || q.includes('overview')) return "The **Dashboard** gives you a high-level view of market KPIs, top movers, and a sector heatmap.";
-      if (q.includes('search') || q.includes('lookup')) return "Use the search bar at the top or on the Search page to find data for over 500+ US equities.";
-      
-      if (q.includes('trade') || q.includes('buy') || q.includes('sell') || q.includes('deposit') || q.includes('wallet') || q.includes('money')) {
-        return "NEXUS is an **analytics and research dashboard**, not a brokerage. We do not support direct trading, wallets, or fund deposits. I can help you analyze markets to make better informed decisions elsewhere!";
+    try {
+      const res = await fetch('/api/support', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [...msgs, newMsg] }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || `API error ${res.status}`);
       }
 
-      if (q.includes('bangladesh') || q.includes('bd ') || q.includes('dse')) {
-        return "Currently, NEXUS focuses on **US Equities (S&P 500)** via our data providers. We do not have support for Bangladeshi stock exchanges at this time.";
-      }
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let acc = "";
+      let buf = "";
 
-      if (q.includes('hello') || q.includes('hi ') || q === 'hi' || q.includes('hey')) return "Hello! I'm the NEXUS Assistant. I can help with dashboard features, stock lookup, comparison, and technical analysis.";
-      if (q.includes('who are you') || q.includes('your name')) return "I am the NEXUS Assistant, designed to help you navigate our fintech analytics platform.";
-      if (q.includes('thank')) return "You're very welcome! Let me know if you need help with our analysis tools.";
-      
-      return "I can help with dashboard features, stock lookup, comparison, and technical analysis. What would you like to know more about?";
-    };
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
 
-    setTimeout(() => {
-      const reply = generateResponse(text);
-      setIsTyping(false);
+        const lines = buf.split('\n');
+        buf = lines.pop() || "";
 
-      // Simulated typing stream effect for smooth UI
-      let i = 0;
-      setStreamBuf("");
-      
-      const interval = setInterval(() => {
-        const chunkLength = Math.max(1, Math.floor(reply.length / 40)); 
-        i += chunkLength;
-        if (i >= reply.length) {
-          i = reply.length;
-          clearInterval(interval);
-          setStreamBuf('');
-          setMsgs(p => [...p, { role: 'bot', text: reply }]);
-        } else {
-          setStreamBuf(reply.slice(0, i));
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const json = line.slice(6).trim();
+          if (json === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(json);
+            const chunk = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (chunk) {
+              acc += chunk;
+              setStreamBuf(acc);
+            }
+          } catch { /* skip malformed chunks */ }
         }
-      }, 20);
-    }, 600);
+      }
+
+      setMsgs(p => [...p, { role: 'bot', text: acc }]);
+      setStreamBuf('');
+    } catch (err) {
+      const fallback = "I'm having trouble connecting right now. Please try again in a moment.";
+      setMsgs(p => [...p, { role: 'bot', text: fallback }]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   if (!isOpen) {

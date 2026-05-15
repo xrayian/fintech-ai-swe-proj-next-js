@@ -7,17 +7,29 @@
 :root {
   --bg: #0a0a0f;
   --bg-deep: #050508;
+  --glass: rgba(255,255,255,0.04);
+  --glass-hi: rgba(255,255,255,0.07);
+  --glass-lo: rgba(255,255,255,0.025);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hi: rgba(255, 255, 255, 0.14);
   --text: #ffffff;
   --text-dim: rgba(255, 255, 255, 0.62);
   --text-mute: rgba(255, 255, 255, 0.38);
   --text-faint: rgba(255, 255, 255, 0.20);
   --cyan: #22d3ee;
+  --cyan-soft: rgba(34,211,238,0.12);
   --violet: #a78bfa;
+  --violet-soft: rgba(167,139,250,0.12);
   --emerald: #34d399;
+  --emerald-soft: rgba(52,211,153,0.12);
   --amber: #fbbf24;
+  --amber-soft: rgba(251,191,36,0.12);
   --rose: #fb7185;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-hi: rgba(255, 255, 255, 0.14);
+  --rose-soft: rgba(251,113,133,0.12);
+  --up: #34d399;
+  --down: #fb7185;
+  --nav-bg: rgba(5, 5, 8, 0.85);
+  --header-bg: rgba(5, 5, 8, 0.6);
 
   /* responsive layout vars */
   --sidebar-w: 218px;
@@ -77,6 +89,34 @@
     --col-dir: column;
     --compare-align: stretch;
   }
+}
+
+html.light-mode {
+  --bg: #f4f7fb; /* 5% cool fintech slate tint */
+  --bg-deep: #e9eff5; /* Slightly deeper slate for ambient backdrop */
+  --glass: rgba(255, 255, 255, 0.75);
+  --glass-hi: rgba(255, 255, 255, 0.95);
+  --glass-lo: rgba(233, 239, 245, 0.75);
+  --border: rgba(19, 23, 34, 0.08);
+  --border-hi: rgba(19, 23, 34, 0.16);
+  --text: #131722;
+  --text-dim: #434651;
+  --text-mute: #787b86;
+  --text-faint: #b2b5be;
+  --cyan: #0062ff; /* More vibrant, rich blue */
+  --cyan-soft: rgba(0, 98, 255, 0.15); /* Higher opacity for colorful ambient glow */
+  --violet: #7c3aed; /* More vibrant purple */
+  --violet-soft: rgba(124, 58, 237, 0.15);
+  --emerald: #089981;
+  --emerald-soft: rgba(8, 153, 129, 0.18); /* Richer green glow */
+  --amber: #f59e0b;
+  --amber-soft: rgba(245, 158, 11, 0.15);
+  --rose: #f23645;
+  --rose-soft: rgba(242, 54, 69, 0.18); /* Richer red glow */
+  --up: #089981;
+  --down: #f23645;
+  --nav-bg: rgba(244, 247, 251, 0.7); /* Slightly more transparent to let ambient colors shine through */
+  --header-bg: rgba(244, 247, 251, 0.65);
 }
 
 * {

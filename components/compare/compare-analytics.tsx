@@ -75,7 +75,7 @@ function MainContent({ symA, symB, onChangeA, onChangeB, scorecardMap, mounted, 
 
       <GlassCard style={{
         padding: "14px 18px", marginBottom: 14,
-        background: `linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.06))`,
+        background: `linear-gradient(135deg,${U.cyanSoft},${U.violetSoft})`,
         border: `1px solid ${winnerColor}30`, display: "flex", alignItems: "center", gap: 12
       }}>
         <div style={{
@@ -113,7 +113,7 @@ function MainContent({ symA, symB, onChangeA, onChangeB, scorecardMap, mounted, 
             {mounted ? (
               <ResponsiveContainer width="100%" height={320}>
                 <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
-                  <PolarGrid stroke="rgba(255,255,255,0.07)" />
+                  <PolarGrid stroke={U.border} />
                   <PolarAngleAxis dataKey="m" tick={{ fill: U.textDim, fontSize: 10, fontFamily: 'Inter, sans-serif' }} />
                   <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
                   <Radar name={symA} dataKey="A" stroke={U.cyan} fill={U.cyan} fillOpacity={.1} strokeWidth={2} dot={{ fill: U.cyan, r: 3 }} />
@@ -151,8 +151,8 @@ function MainContent({ symA, symB, onChangeA, onChangeB, scorecardMap, mounted, 
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <span style={{ fontSize: 10, fontWeight: 700, color: U.cyan, fontFamily: 'JetBrains Mono', minWidth: 44, textAlign: "right", flexShrink: 0 }}>{fmt(m.a, 1)}{m.u}</span>
                     <div style={{ flex: 1, display: "flex", gap: 2, height: 6, borderRadius: 999, overflow: "hidden" }}>
-                      <div style={{ flex: m.a / mx, background: aw ? U.cyan : "rgba(34,211,238,0.18)", borderRadius: "999px 0 0 999px", transition: "flex .45s ease" }} />
-                      <div style={{ flex: m.b / mx, background: !aw ? U.violet : "rgba(167,139,250,0.18)", borderRadius: "0 999px 999px 0", transition: "flex .45s ease" }} />
+                      <div style={{ flex: m.a / mx, background: aw ? U.cyan : U.cyanSoft, borderRadius: "999px 0 0 999px", transition: "flex .45s ease" }} />
+                      <div style={{ flex: m.b / mx, background: !aw ? U.violet : U.violetSoft, borderRadius: "0 999px 999px 0", transition: "flex .45s ease" }} />
                     </div>
                     <span style={{ fontSize: 10, fontWeight: 700, color: U.violet, fontFamily: 'JetBrains Mono', minWidth: 44, textAlign: "left", flexShrink: 0 }}>{fmt(m.b, 1)}{m.u}</span>
                   </div>
@@ -163,12 +163,10 @@ function MainContent({ symA, symB, onChangeA, onChangeB, scorecardMap, mounted, 
 
           <div style={{
             marginTop: 12, padding: "16px 18px",
-            background: `linear-gradient(135deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01))`,
-            backdropFilter: "blur(12px)",
+            background: U.glassLo,
             border: `1px solid ${U.border}`,
-            borderRadius: 14,
-            borderLeft: `3px solid ${winnerColor}`,
-            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05)`
+            padding: "24px 30px", borderRadius: 16, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center",
+            boxShadow: `inset 0 1px 0 ${U.glassHi}`
           }}>
             <div style={{
               fontSize: 10, fontWeight: 700, color: U.textMute, textTransform: "uppercase",

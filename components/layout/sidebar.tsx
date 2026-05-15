@@ -44,11 +44,11 @@ export function Sidebar({ open, mobile, onClose }: SidebarProps) {
         left: mobile ? 0 : undefined, top: mobile ? 0 : undefined,
         bottom: mobile ? 0 : undefined,
         zIndex: mobile ? 21 : 10,
-        background: mobile ? "rgba(5,5,8,0.96)" : undefined,
+        background: mobile ? U.navBg : undefined,
       }}>
         <div style={{
           width: 218, height: "100%", display: "flex", flexDirection: "column",
-          background: "rgba(5,5,8,0.85)",
+          background: U.navBg,
           backdropFilter: "blur(30px) saturate(160%)",
           WebkitBackdropFilter: "blur(30px) saturate(160%)",
           borderRight: `1px solid ${U.border}`

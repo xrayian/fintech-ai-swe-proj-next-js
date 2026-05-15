@@ -157,9 +157,10 @@ export default function Dashboard() {
                     }}>
                     <div style={{
                       width: 32, height: 32,
-                      background: up ? "rgba(52,211,153,0.12)" : "rgba(251,113,133,0.12)",
-                      border: `1px solid rgba(${up ? "52,211,153" : "251,113,133"},0.2)`,
-                      borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink:0
+                      background: up ? U.emeraldSoft : U.roseSoft,
+                      border: `1px solid rgba(${up ? "52,211,153" : "251,113,133"},0.3)`,
+                      borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink:0,
+                      boxShadow: `0 0 12px ${up ? U.emeraldSoft : U.roseSoft}`
                     }}>
                       {up ? <TrendingUp size={13} color={U.up} /> : <TrendingDown size={13} color={U.down} />}
                     </div>

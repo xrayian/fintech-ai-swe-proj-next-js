@@ -7,6 +7,7 @@ import { GlassCard } from '@/components/shared/glass-card';
 import { SectionTitle } from '@/components/shared/section-title';
 import { useWatchlist } from '@/hooks/use-watchlist';
 import { useToast } from '@/components/shared/toast-provider';
+import { useTheme } from '@/components/shared/theme-provider';
 
 export default function SettingsPage() {
   const [conn, setConn] = useState<Record<string, boolean>>({});
@@ -15,6 +16,7 @@ export default function SettingsPage() {
   const [addResults, setAddResults] = useState<{ sym: string; name: string }[]>([]);
   const [clearing, setClearing] = useState(false);
   const { toast } = useToast();
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then(setConn).catch(() => {});
@@ -161,16 +163,21 @@ export default function SettingsPage() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0" }}>
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, color: U.text }}>Theme</div>
-            <div style={{ fontSize: 10, color: U.textMute }}>Dark mode (default)</div>
+            <div style={{ fontSize: 10, color: U.textMute }}>{theme === 'dark' ? 'Dark mode' : 'Light mode'}</div>
           </div>
-          <div style={{
-            width: 44, height: 24, borderRadius: 999, background: U.glassHi, border: `1px solid ${U.border}`,
-            display: "flex", alignItems: "center", padding: "0 4px", cursor: "not-allowed", opacity: 0.6
-          }}>
-            <div style={{ width: 16, height: 16, borderRadius: "50%", background: U.cyan, marginLeft: "auto" }} />
+          <div 
+            onClick={toggleTheme}
+            style={{
+              width: 44, height: 24, borderRadius: 999, background: theme === 'dark' ? U.glassHi : U.glass, border: `1px solid ${theme === 'dark' ? U.cyan : U.border}`,
+              display: "flex", alignItems: "center", padding: "0 4px", cursor: "pointer", transition: "all .3s"
+            }}>
+            <div style={{ 
+              width: 16, height: 16, borderRadius: "50%", background: theme === 'dark' ? U.cyan : U.textMute, 
+              transform: theme === 'dark' ? "translateX(18px)" : "translateX(0px)", transition: "all .3s" 
+            }} />
           </div>
         </div>
-        <div style={{ fontSize: 10, color: U.textFaint, marginTop: 8 }}>Theme customization coming soon.</div>
+        <div style={{ fontSize: 10, color: U.textFaint, marginTop: 8 }}>Click to toggle between light and dark trading vibes.</div>
       </GlassCard>
     </div>
   );

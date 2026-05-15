@@ -49,8 +49,8 @@ export function CandleChart({ data, loading }: CandleChartProps) {
     const d = payload[0]?.payload; if (!d) return null;
     return (
       <div style={{
-        background: "rgba(5,5,8,0.9)", padding: "10px 14px",
-        boxShadow: "0 12px 40px rgba(0,0,0,0.6)",
+        background: U.navBg, padding: "10px 14px",
+        boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
         border: `1px solid ${U.border}`, borderRadius: 10, backdropFilter: "blur(12px)"
       }}>
         <div style={{ fontSize: 10, color: U.textMute, marginBottom: 6, fontFamily: 'JetBrains Mono' }}>{d.date}</div>
@@ -89,10 +89,10 @@ export function CandleChart({ data, loading }: CandleChartProps) {
       </div>
       <ResponsiveContainer width="100%" height={240}>
         <ComposedChart data={enriched} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-          <CartesianGrid strokeDasharray="2 4" stroke="rgba(255,255,255,0.05)" vertical={false} />
+          <CartesianGrid strokeDasharray="2 4" stroke={U.border} vertical={false} />
           <XAxis dataKey="date" tick={{ fill: U.textMute, fontSize: 10, fontFamily: 'JetBrains Mono' }} tickLine={false} axisLine={false} interval={9} />
           <YAxis domain={[minP, maxP]} tick={{ fill: U.textMute, fontSize: 10, fontFamily: 'JetBrains Mono' }} tickLine={false} axisLine={false} width={48} tickFormatter={v => `$${v}`} />
-          <Tooltip content={<TT />} cursor={{ fill: "rgba(255,255,255,0.025)" }} />
+          <Tooltip content={<TT />} cursor={{ fill: U.glassLo }} />
           <Bar dataKey="mid" isAnimationActive={false} shape={(p: any) => <CandleShape {...p} minP={minP} maxP={maxP} />} />
         </ComposedChart>
       </ResponsiveContainer>
@@ -106,7 +106,7 @@ export function CandleChart({ data, loading }: CandleChartProps) {
         <ComposedChart data={enriched} margin={{ top: 0, right: 4, bottom: 0, left: 0 }}>
           <XAxis dataKey="date" hide /><YAxis hide />
           <Bar dataKey="volume" isAnimationActive={false} radius={[2, 2, 0, 0]}>
-            {enriched.map((e, i) => <Cell key={i} fill={e.bullish ? "rgba(52,211,153,0.45)" : "rgba(251,113,133,0.45)"} />)}
+            {enriched.map((e, i) => <Cell key={i} fill={e.bullish ? U.emeraldSoft : U.roseSoft} />)}
           </Bar>
         </ComposedChart>
       </ResponsiveContainer>

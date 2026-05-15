@@ -225,7 +225,7 @@ export default function AICopilot() {
         )}
       </div>
       {!isMobile && (
-        <div style={{ padding: "10px 14px", borderTop: `1px solid ${U.border}`, flexShrink: 0, background: "rgba(5,5,8,0.4)" }}>
+        <div style={{ padding: "10px 14px", borderTop: `1px solid ${U.border}`, flexShrink: 0, background: U.glassLo }}>
           <div style={{ fontSize: 10, color: U.textFaint, lineHeight: 1.5, display: "flex", alignItems: "flex-start", gap: 6 }}>
             <Lightbulb size={10} color={U.violet} style={{ flexShrink: 0, marginTop: 2 }} />
             Click a scorecard to expand its full financial breakdown, then ask the Copilot about it.
@@ -238,8 +238,8 @@ export default function AICopilot() {
   const chatPanel = (
     <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden", position: "relative" }}>
       <div style={{ padding: isMobile ? "0 12px" : "0 18px", height: isMobile ? 44 : 52, borderBottom: `1px solid ${U.border}`, display: "flex", alignItems: "center", gap: 10, background: `linear-gradient(135deg,rgba(34,211,238,0.05),rgba(167,139,250,0.05))`, flexShrink: 0 }}>
-        <div style={{ width: isMobile ? 26 : 30, height: isMobile ? 26 : 30, borderRadius: "50%", flexShrink: 0, background: `linear-gradient(135deg,${U.cyan},${U.violet})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 16px rgba(34,211,238,0.35)` }}>
-          <Sparkles size={isMobile ? 11 : 13} color="#0a0a0f" />
+        <div style={{ width: isMobile ? 26 : 30, height: isMobile ? 26 : 30, borderRadius: "50%", flexShrink: 0, background: `linear-gradient(135deg,${U.cyan},${U.violet})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 16px ${U.cyanSoft}` }}>
+          <Sparkles size={isMobile ? 11 : 13} color="white" />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: isMobile ? 12 : 13, fontWeight: 700, color: U.text, lineHeight: 1 }}>NEXUS Copilot</div>
@@ -260,8 +260,8 @@ export default function AICopilot() {
       <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "12px 12px 8px" : "20px 20px 12px", display: "flex", flexDirection: "column", gap: isMobile ? 12 : 16 }}>
         {msgs.length === 1 && (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: isMobile ? "16px 12px 0" : "32px 20px 0", gap: 14, animation: "fi .4s ease" }}>
-            <div style={{ width: isMobile ? 44 : 56, height: isMobile ? 44 : 56, borderRadius: "50%", background: `linear-gradient(135deg,${U.cyan},${U.violet})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 32px rgba(34,211,238,0.3)` }}>
-              <Sparkles size={isMobile ? 17 : 22} color="#0a0a0f" />
+            <div style={{ width: isMobile ? 44 : 56, height: isMobile ? 44 : 56, borderRadius: "50%", background: `linear-gradient(135deg,${U.cyan},${U.violet})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 32px ${U.cyanSoft}` }}>
+              <Sparkles size={isMobile ? 17 : 22} color="white" />
             </div>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: isMobile ? 14 : 16, fontWeight: 700, color: U.text, marginBottom: 4 }}>Your AI Financial Copilot</div>
@@ -271,21 +271,21 @@ export default function AICopilot() {
         )}
         {msgs.map((m, i) => (
           <div key={i} style={{ display: "flex", flexDirection: m.role === "user" ? "row-reverse" : "row", alignItems: "flex-start", gap: isMobile ? 8 : 10, animation: "fi .22s ease" }}>
-            {m.role === "assistant" && <div style={{ width: isMobile ? 24 : 28, height: isMobile ? 24 : 28, background: `linear-gradient(135deg,${U.cyan},${U.violet})`, borderRadius: "50%", flexShrink: 0, marginTop: 2, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 10px rgba(34,211,238,0.25)` }}><Bot size={isMobile ? 10 : 12} color="#0a0a0f" /></div>}
-            {m.role === "user" && <div style={{ width: isMobile ? 24 : 28, height: isMobile ? 24 : 28, background: "rgba(255,255,255,0.12)", border: `1px solid rgba(255,255,255,0.2)`, borderRadius: "50%", flexShrink: 0, marginTop: 2, display: "flex", alignItems: "center", justifyContent: "center", fontSize: isMobile ? 9 : 11, fontWeight: 700, color: U.text }}>U</div>}
-            <div style={{ maxWidth: isMobile ? "82%" : "72%", padding: isMobile ? "10px 13px" : "11px 15px", fontSize: isMobile ? 12.5 : 13, lineHeight: 1.7, color: m.role === "user" ? "#06070a" : U.text, borderRadius: m.role === "user" ? "16px 4px 16px 16px" : "4px 16px 16px 16px", background: m.role === "user" ? "rgba(255,255,255,0.93)" : `linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04))`, border: `1px solid ${m.role === "user" ? "rgba(255,255,255,0.2)" : "rgba(167,139,250,0.18)"}`, backdropFilter: "blur(10px)", boxShadow: m.role === "assistant" ? `0 2px 16px rgba(0,0,0,0.3)` : `0 2px 12px rgba(0,0,0,0.2)` }} dangerouslySetInnerHTML={{ __html: md(m.content) }} />
+            {m.role === "assistant" && <div style={{ width: isMobile ? 24 : 28, height: isMobile ? 24 : 28, background: `linear-gradient(135deg,${U.cyan},${U.violet})`, borderRadius: "50%", flexShrink: 0, marginTop: 2, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 10px ${U.cyanSoft}` }}><Bot size={isMobile ? 10 : 12} color="white" /></div>}
+            {m.role === "user" && <div style={{ width: isMobile ? 24 : 28, height: isMobile ? 24 : 28, background: U.glassHi, border: `1px solid ${U.border}`, borderRadius: "50%", flexShrink: 0, marginTop: 2, display: "flex", alignItems: "center", justifyContent: "center", fontSize: isMobile ? 9 : 11, fontWeight: 700, color: U.text }}>U</div>}
+            <div style={{ maxWidth: isMobile ? "82%" : "72%", padding: isMobile ? "10px 13px" : "11px 15px", fontSize: isMobile ? 12.5 : 13, lineHeight: 1.7, color: U.text, borderRadius: m.role === "user" ? "16px 4px 16px 16px" : "4px 16px 16px 16px", background: m.role === "user" ? U.glassHi : `linear-gradient(135deg,${U.cyanSoft},${U.violetSoft})`, border: `1px solid ${m.role === "user" ? U.borderHi : U.border}`, backdropFilter: "blur(10px)", boxShadow: `0 2px 16px rgba(0,0,0,0.05)` }} dangerouslySetInnerHTML={{ __html: md(m.content) }} />
           </div>
         ))}
         {loading && streamBuf && (
           <div style={{ display: "flex", alignItems: "flex-start", gap: isMobile ? 8 : 10, animation: "fi .2s ease" }}>
-            <div style={{ width: isMobile ? 24 : 28, height: isMobile ? 24 : 28, background: `linear-gradient(135deg,${U.cyan},${U.violet})`, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><Bot size={isMobile ? 10 : 12} color="#0a0a0f" /></div>
-            <div style={{ maxWidth: isMobile ? "82%" : "72%", padding: isMobile ? "10px 13px" : "11px 15px", fontSize: isMobile ? 12.5 : 13, lineHeight: 1.7, color: U.text, borderRadius: "4px 16px 16px 16px", background: `linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04))`, border: "1px solid rgba(167,139,250,0.18)", backdropFilter: "blur(10px)", boxShadow: `0 2px 16px rgba(0,0,0,0.3)` }} dangerouslySetInnerHTML={{ __html: md(streamBuf) }} />
+            <div style={{ width: isMobile ? 24 : 28, height: isMobile ? 24 : 28, background: `linear-gradient(135deg,${U.cyan},${U.violet})`, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><Bot size={isMobile ? 10 : 12} color="white" /></div>
+            <div style={{ maxWidth: isMobile ? "82%" : "72%", padding: isMobile ? "10px 13px" : "11px 15px", fontSize: isMobile ? 12.5 : 13, lineHeight: 1.7, color: U.text, borderRadius: "4px 16px 16px 16px", background: `linear-gradient(135deg,${U.cyanSoft},${U.violetSoft})`, border: `1px solid ${U.borderHi}`, backdropFilter: "blur(10px)", boxShadow: `0 2px 16px rgba(0,0,0,0.05)` }} dangerouslySetInnerHTML={{ __html: md(streamBuf) }} />
           </div>
         )}
         {loading && !streamBuf && (
           <div style={{ display: "flex", alignItems: "flex-start", gap: isMobile ? 8 : 10, animation: "fi .2s ease" }}>
-            <div style={{ width: isMobile ? 24 : 28, height: isMobile ? 24 : 28, background: `linear-gradient(135deg,${U.cyan},${U.violet})`, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><Bot size={isMobile ? 10 : 12} color="#0a0a0f" /></div>
-            <div style={{ padding: "13px 18px", background: `linear-gradient(135deg,rgba(34,211,238,0.06),rgba(167,139,250,0.04))`, border: "1px solid rgba(167,139,250,0.18)", borderRadius: "4px 16px 16px 16px", display: "flex", alignItems: "center", gap: 5 }}>
+            <div style={{ width: isMobile ? 24 : 28, height: isMobile ? 24 : 28, background: `linear-gradient(135deg,${U.cyan},${U.violet})`, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><Bot size={isMobile ? 10 : 12} color="white" /></div>
+            <div style={{ padding: "13px 18px", background: `linear-gradient(135deg,${U.cyanSoft},${U.violetSoft})`, border: `1px solid ${U.border}`, borderRadius: "4px 16px 16px 16px", display: "flex", alignItems: "center", gap: 5 }}>
               {[0, 1, 2].map(j => <span key={j} style={{ width: 6, height: 6, borderRadius: "50%", background: `linear-gradient(135deg,${U.cyan},${U.violet})`, display: "inline-block", animation: `dp 1.4s ease ${j * 0.18}s infinite` }} />)}
               <span style={{ fontSize: 11, color: U.textMute, marginLeft: 4 }}>Analyzing\u2026</span>
             </div>
@@ -293,16 +293,16 @@ export default function AICopilot() {
         )}
         <div ref={bot} />
       </div>
-      <div className="chip-scroll" style={{ padding: isMobile ? "6px 12px" : "8px 16px", borderTop: `1px solid ${U.border}`, display: "flex", gap: 6, overflowX: "auto", flexShrink: 0, background: "rgba(5,5,8,0.4)" }}>
+      <div className="chip-scroll" style={{ padding: isMobile ? "6px 12px" : "8px 16px", borderTop: `1px solid ${U.border}`, display: "flex", gap: 6, overflowX: "auto", flexShrink: 0, background: U.glassLo }}>
         <div style={{ fontSize: 9, fontWeight: 700, color: U.textFaint, textTransform: "uppercase", letterSpacing: "0.12em", flexShrink: 0, alignSelf: "center", marginRight: 4 }}>Quick:</div>
         {dynamicPrompts.map(p => (
           <button key={p} onClick={() => send(p)} style={{ padding: "5px 12px", borderRadius: 999, border: `1px solid ${U.border}`, background: U.glassLo, color: U.textDim, cursor: "pointer", fontSize: 11, fontWeight: 500, whiteSpace: "nowrap", flexShrink: 0, transition: "all .15s" }}>{p}</button>
         ))}
       </div>
-      <div style={{ padding: isMobile ? "8px 12px" : "12px 16px", borderTop: `1px solid ${U.border}`, background: "rgba(5,5,8,0.6)", flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "flex-end", gap: 10, background: inputFocus ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.03)", border: `1px solid ${inputFocus ? "rgba(34,211,238,0.35)" : U.border}`, borderRadius: 14, padding: isMobile ? "8px 12px" : "10px 14px", transition: "all .2s" }}>
+      <div style={{ padding: isMobile ? "8px 12px" : "12px 16px", borderTop: `1px solid ${U.border}`, background: U.headerBg, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 10, background: inputFocus ? U.glassHi : U.glass, border: `1px solid ${inputFocus ? U.cyan : U.border}`, borderRadius: 14, padding: isMobile ? "8px 12px" : "10px 14px", transition: "all .2s" }}>
           <textarea ref={inpRef} value={inp} onChange={e => { si(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} onFocus={() => sif(true)} onBlur={() => sif(false)} placeholder="Ask about any stock, valuation, or market signal\u2026" rows={1} style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: U.text, fontSize: isMobile ? 12.5 : 13, lineHeight: 1.6, resize: "none", overflow: "hidden", minHeight: 22, maxHeight: 120 }} />
-          <button onClick={() => send()} disabled={loading || !inp.trim()} style={{ width: 34, height: 34, borderRadius: 10, border: "none", background: inp.trim() && !loading ? `linear-gradient(135deg,${U.cyan},${U.violet})` : "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", cursor: inp.trim() && !loading ? "pointer" : "not-allowed", flexShrink: 0, transition: "all .2s", boxShadow: inp.trim() && !loading ? `0 0 16px rgba(34,211,238,0.35)` : "none" }}><Send size={14} color={inp.trim() && !loading ? "#0a0a0f" : U.textFaint} /></button>
+          <button onClick={() => send()} disabled={loading || !inp.trim()} style={{ width: 34, height: 34, borderRadius: 10, border: "none", background: inp.trim() && !loading ? `linear-gradient(135deg,${U.cyan},${U.violet})` : U.glass, display: "flex", alignItems: "center", justifyContent: "center", cursor: inp.trim() && !loading ? "pointer" : "not-allowed", flexShrink: 0, transition: "all .2s", boxShadow: inp.trim() && !loading ? `0 0 16px ${U.cyanSoft}` : "none" }}><Send size={14} color={inp.trim() && !loading ? "white" : U.textFaint} /></button>
         </div>
       </div>
     </div>
@@ -310,8 +310,8 @@ export default function AICopilot() {
 
   if (isMobile) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", borderRadius: 14, border: `1px solid ${U.border}`, background: "rgba(10,10,15,0.5)", paddingBottom: "var(--copilot-pb)" as any }}>
-        <div style={{ display: "flex", padding: "8px 12px", gap: 6, borderBottom: `1px solid ${U.border}`, background: "rgba(5,5,8,0.6)", flexShrink: 0 }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", borderRadius: 14, border: `1px solid ${U.border}`, background: U.glassLo, paddingBottom: "var(--copilot-pb)" as any }}>
+        <div style={{ display: "flex", padding: "8px 12px", gap: 6, borderBottom: `1px solid ${U.border}`, background: U.headerBg, flexShrink: 0 }}>
           <button onClick={() => setView('chat')} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, background: view === 'chat' ? `linear-gradient(135deg,${U.cyanSoft},${U.violetSoft})` : "transparent", color: view === 'chat' ? U.cyan : U.textMute, transition: "all .15s" }}>
             <MessageSquare size={13} /> Chat
           </button>
@@ -328,10 +328,10 @@ export default function AICopilot() {
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "var(--copilot-cols)" as any, gridTemplateRows: "var(--copilot-rows)" as any, gap: 0, paddingBottom: "var(--copilot-pb)" as any, height: "100%", overflow: "hidden", borderRadius: 14, border: `1px solid ${U.border}`, backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}>
-      <div style={{ display: "flex", flexDirection: "column", borderRight: `1px solid ${U.border}`, background: "rgba(5,5,8,0.6)", overflow: "hidden" }}>
+      <div style={{ display: "flex", flexDirection: "column", borderRight: `1px solid ${U.border}`, background: U.headerBg, overflow: "hidden" }}>
         {scoresPanel}
       </div>
-      <div style={{ display: "flex", flexDirection: "column", background: "rgba(10,10,15,0.5)", overflow: "hidden", position: "relative" }}>
+      <div style={{ display: "flex", flexDirection: "column", background: U.glassLo, overflow: "hidden", position: "relative" }}>
         {chatPanel}
       </div>
     </div>

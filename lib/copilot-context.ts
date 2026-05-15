@@ -1,10 +1,17 @@
-import {
-  fetchFundamentals, fetchQuote, fetchNews, fetchSectors,
-} from '@/lib/providers/orchestrator';
+import { fetchFundamentals, fetchQuote, fetchNews, fetchSectors, } from '@/lib/providers/orchestrator';
 import { SP500_TOP100 } from '@/lib/symbols/sp500-top100';
+import ALL_SYMBOLS from '@/lib/symbols/stock-symbols.json';
 import type { NormalizedFundamentals } from '@/lib/providers/types';
 
-const ENTITY_SYMBOLS = SP500_TOP100.slice(0, 50).map(s => s.sym);
+const ENTITY_SYMBOLS = ALL_SYMBOLS.map(s => s.sym);
+
+const ENTITY_NAMES = ALL_SYMBOLS.map(s => {
+  const clean = s.name
+    .replace(/( Inc\.| Corp\.| Corporation| Ltd\.| Co\.| plc| Group| Platforms| Technologies| Solutions)/gi, '')
+    .trim()
+    .toLowerCase();
+  return { sym: s.sym, name: clean, firstWord: clean.split(' ')[0] };
+});
 
 export interface Entities {
   tickers: string[];
@@ -12,8 +19,22 @@ export interface Entities {
 }
 
 export function extractEntities(msg: string): Entities {
+  const lower = msg.toLowerCase();
   const upper = msg.toUpperCase();
-  const tickers = ENTITY_SYMBOLS.filter(sym => new RegExp(`\\b${sym}\\b`).test(upper));
+  
+  // Match tickers (e.g., AAPL)
+  const tickersFromSyms = ENTITY_SYMBOLS.filter(sym => new RegExp(`\\b${sym}\\b`).test(upper));
+  
+  // Match company names (e.g., Apple, Microsoft, Uber)
+  const tickersFromNames = ENTITY_NAMES
+    .filter(e => {
+      if (lower.includes(e.name)) return true;
+      if (e.firstWord.length > 3 && new RegExp(`\\b${e.firstWord}\\b`, 'i').test(lower)) return true;
+      return false;
+    })
+    .map(e => e.sym);
+
+  const tickers = [...new Set([...tickersFromSyms, ...tickersFromNames])];
 
   const intent: Entities['intent'] =
     /\b(compare|vs\.?|versus|difference|better|which)\b/i.test(msg) ? 'compare' :

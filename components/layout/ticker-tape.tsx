@@ -10,7 +10,7 @@ export function TickerTape() {
   
   return (
     <div style={{
-      background: "rgba(255,255,255,0.02)", borderBottom: `1px solid ${U.border}`,
+      background: U.glassLo, borderBottom: `1px solid ${U.border}`,
       backdropFilter: "blur(20px)", height: "var(--ticker-h)" as any, overflow: "hidden", display: "flex",
       alignItems: "center", flexShrink: 0, position: "relative", zIndex: 5
     }}>

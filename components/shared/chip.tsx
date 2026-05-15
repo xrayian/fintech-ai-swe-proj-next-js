@@ -20,8 +20,8 @@ export function Chip({ label, active, onClick }: ChipProps) {
         padding: "6px 13px", borderRadius: 999, cursor: "pointer",
         fontSize: 11, fontWeight: 600, lineHeight: 1, transition: "all .15s",
         backdropFilter: "blur(10px)",
-        border: `1px solid ${active ? "rgba(255,255,255,0.22)" : U.border}`,
-        background: active ? "rgba(255,255,255,0.12)" : (h ? U.glassHi : U.glass),
+        border: `1px solid ${active ? U.borderHi : U.border}`,
+        background: active ? U.glassHi : (h ? U.glassHi : U.glass),
         color: active ? U.text : U.textDim
       }}
     >

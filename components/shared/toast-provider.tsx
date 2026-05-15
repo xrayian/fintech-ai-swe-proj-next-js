@@ -26,10 +26,10 @@ const ICON_MAP: Record<ToastType, typeof CheckCircle> = {
 };
 
 const COLOR_MAP: Record<ToastType, { accent: string; soft: string; border: string }> = {
-  success: { accent: U.emerald, soft: 'rgba(52,211,153,0.12)', border: 'rgba(52,211,153,0.25)' },
-  error: { accent: U.rose, soft: 'rgba(251,113,133,0.12)', border: 'rgba(251,113,133,0.25)' },
-  warning: { accent: U.amber, soft: 'rgba(251,191,36,0.12)', border: 'rgba(251,191,36,0.25)' },
-  info: { accent: U.cyan, soft: 'rgba(34,211,238,0.12)', border: 'rgba(34,211,238,0.25)' },
+  success: { accent: U.emerald, soft: U.emeraldSoft, border: `rgba(52,211,153,0.25)` },
+  error: { accent: U.rose, soft: U.roseSoft, border: `rgba(251,113,133,0.25)` },
+  warning: { accent: U.amber, soft: U.amberSoft, border: `rgba(251,191,36,0.25)` },
+  info: { accent: U.cyan, soft: U.cyanSoft, border: `rgba(34,211,238,0.25)` },
 };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -62,7 +62,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               pointerEvents: 'auto',
               display: 'flex', alignItems: 'center', gap: 10,
               padding: '12px 14px',
-              background: 'rgba(10,10,15,0.92)',
+              background: U.navBg,
               backdropFilter: 'blur(24px) saturate(150%)',
               WebkitBackdropFilter: 'blur(24px) saturate(150%)',
               border: `1px solid ${c.border}`,

@@ -217,8 +217,8 @@ export default function TechnicalSuite() {
           {searchOpen && (
             <div style={{
               position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 100, width: 240,
-              background: "rgba(10,10,15,0.96)", backdropFilter: "blur(24px)", borderRadius: 12,
-              border: `1px solid ${U.borderHi}`, overflow: "hidden", boxShadow: "0 12px 40px rgba(0,0,0,0.5)"
+              background: U.navBg, backdropFilter: "blur(24px)", borderRadius: 12,
+              border: `1px solid ${U.borderHi}`, overflow: "hidden", boxShadow: "0 12px 40px rgba(0,0,0,0.15)"
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderBottom: `1px solid ${U.border}` }}>
                 <SearchIcon size={13} color={U.textMute} />
@@ -257,21 +257,21 @@ export default function TechnicalSuite() {
             <span style={{
               fontSize: 9, fontWeight: 700, color: U.amber, background: U.amberSoft,
               padding: "3px 10px", borderRadius: 999,
-              border: "1px solid rgba(251,191,36,0.28)", letterSpacing: "0.07em",
+              border: `1px solid ${U.amberSoft}`, letterSpacing: "0.07em",
               display: "flex", alignItems: "center", gap: 5
             }}>LOADING</span>
           ) : error ? (
             <span style={{
               fontSize: 9, fontWeight: 700, color: U.rose, background: U.roseSoft,
               padding: "3px 10px", borderRadius: 999,
-              border: "1px solid rgba(251,113,133,0.28)", letterSpacing: "0.07em",
+              border: `1px solid ${U.roseSoft}`, letterSpacing: "0.07em",
               display: "flex", alignItems: "center", gap: 5
             }}><AlertTriangle size={8} color={U.rose} /> OFFLINE</span>
           ) : (
             <span style={{
               fontSize: 9, fontWeight: 700, color: U.up, background: U.emeraldSoft,
               padding: "3px 10px", borderRadius: 999,
-              border: "1px solid rgba(52,211,153,0.28)", letterSpacing: "0.07em",
+              border: `1px solid ${U.emeraldSoft}`, letterSpacing: "0.07em",
               display: "flex", alignItems: "center", gap: 5
             }}><Circle size={6} fill={U.up} /> CACHED</span>
           )}
@@ -301,10 +301,15 @@ export default function TechnicalSuite() {
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "var(--grid-3)" as any, gap: 8 }}>
           {indicatorCards.map(ind => (
-            <GlassCard key={ind.l} style={{ padding: "12px 14px", position: "relative", overflow: "hidden" }}>
+            <GlassCard key={ind.l} style={{ padding: "12px 14px", position: "relative", overflow: "hidden" }} className="glow-hover">
               <div style={{
-                position: "absolute", top: 0, left: 0, right: 0, height: 1,
-                background: `linear-gradient(90deg,transparent,${ind.accent},transparent)`
+                position: "absolute", top: 0, left: 0, right: 0, height: 2,
+                background: `linear-gradient(90deg,transparent,${ind.accent},transparent)`,
+                boxShadow: `0 0 12px ${ind.accent}`
+              }} />
+              <div style={{
+                position: "absolute", top: -15, left: "50%", transform: "translateX(-50%)",
+                width: 80, height: 30, background: ind.accent, opacity: 0.15, filter: "blur(15px)"
               }} />
               <div style={{
                 fontSize: 9, fontWeight: 600, color: U.textMute, textTransform: "uppercase",

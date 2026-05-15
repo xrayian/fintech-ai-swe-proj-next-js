@@ -32,7 +32,7 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
 
   return (
     <div style={{
-      background: "rgba(5,5,8,0.6)", borderBottom: `1px solid ${U.border}`,
+      background: U.headerBg, borderBottom: `1px solid ${U.border}`,
       backdropFilter: "blur(20px)", flexShrink: 0, padding: "0 22px", position: "relative", zIndex: 5
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, paddingTop: 14, paddingBottom: 12 }}>

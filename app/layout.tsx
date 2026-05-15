@@ -9,8 +9,10 @@ import { TickerTape } from '@/components/layout/ticker-tape';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { ToastProvider } from '@/components/shared/toast-provider';
+import { ThemeProvider } from '@/components/shared/theme-provider';
 import { U } from '@/lib/constants';
 import { useResponsive } from '@/hooks/use-responsive';
+import { SupportChat } from '@/components/shared/support-chat';
 import "./globals.css";
 
 const MOBILE_NAV = [
@@ -34,8 +36,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AmbientBg />
-        <div style={{ display: "flex", height: "100vh", position: "relative", zIndex: 1, overflow: "hidden" }}>
+        <ThemeProvider>
+          <AmbientBg />
+          <div style={{ display: "flex", height: "100vh", position: "relative", zIndex: 1, overflow: "hidden" }}>
           <Sidebar open={sidebarOpen} mobile={isMobile} onClose={() => setSidebarOpen(false)} />
           
           <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
@@ -46,7 +49,7 @@ export default function RootLayout({
               flex: 1, 
               overflowY: isCopilot ? "hidden" : "auto", 
               padding: isCopilot ? 0 : "var(--main-p)" as any, 
-              background: "rgba(5,5,8,0.3)",
+              background: "var(--glass-lo)",
               position: "relative",
               paddingBottom: isCopilot ? 0 : "calc(var(--main-p) + var(--bottom-nav-h))" as any,
             }}>
@@ -57,7 +60,7 @@ export default function RootLayout({
           {isMobile && (
             <div style={{
               position: "fixed", bottom: 0, left: 0, right: 0, height: "var(--bottom-nav-h)" as any,
-              background: "rgba(5,5,8,0.92)", backdropFilter: "blur(30px) saturate(160%)",
+              background: U.navBg, backdropFilter: "blur(30px) saturate(160%)",
               WebkitBackdropFilter: "blur(30px) saturate(160%)",
               borderTop: `1px solid ${U.border}`,
               display: "flex", alignItems: "center", justifyContent: "space-around",
@@ -75,6 +78,8 @@ export default function RootLayout({
             </div>
           )}
         </div>
+        {!isCopilot && <SupportChat />}
+        </ThemeProvider>
       </body>
     </html>
   );

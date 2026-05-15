@@ -26,8 +26,13 @@ export function KpiCard({ label, value, sub, trend, accent }: KpiCardProps) {
       }}
     >
       {accent && <div style={{
-        position: "absolute", top: 0, left: 0, right: 0, height: 1,
-        background: `linear-gradient(90deg,transparent,${accent},transparent)`
+        position: "absolute", top: 0, left: 0, right: 0, height: 2,
+        background: `linear-gradient(90deg,transparent,${accent},transparent)`,
+        boxShadow: h ? `0 0 15px ${accent}` : "none", transition: "all .3s ease"
+      }} />}
+      {accent && <div style={{
+        position: "absolute", top: -20, left: "50%", transform: "translateX(-50%)",
+        width: 100, height: 40, background: accent, opacity: h ? 0.2 : 0.05, filter: "blur(20px)", transition: "all .3s ease"
       }} />}
       <div style={{
         fontSize: 10, fontWeight: 600, color: U.textMute, textTransform: "uppercase",

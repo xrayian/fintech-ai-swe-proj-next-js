@@ -6,9 +6,10 @@ import { getCached, setCached } from '@/lib/cache';
 const DEFAULTS = SP500_TOP100.slice(0, 8).map(s => s.sym);
 
 function fmtMarketCap(n: number): string {
-  if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}T`;
-  if (n >= 1e3) return `$${(n / 1e3).toFixed(1)}B`;
-  return `$${n.toFixed(0)}M`;
+  if (n >= 1e12) return `$${(n / 1e12).toFixed(1)}T`;
+  if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
+  if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
+  return `$${(n / 1e3).toFixed(1)}K`;
 }
 
 export async function GET() {

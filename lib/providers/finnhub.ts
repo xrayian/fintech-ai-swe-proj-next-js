@@ -60,7 +60,7 @@ export async function fetchCandles(symbol: string, resolution: string, count: nu
   if (data.s === 'no_data') return [];
   if (!data.t) return [];
   return data.t.map((t: number, i: number) => ({
-    date: new Date(t * 1000).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' }),
+    date: new Date(t * 1000).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' }),
     open: data.o[i],
     high: data.h[i],
     low: data.l[i],

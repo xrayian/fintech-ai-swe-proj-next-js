@@ -8,19 +8,19 @@ import { useResponsive } from '@/hooks/use-responsive';
 type Message = { role: 'bot' | 'user', text: string };
 
 const SUGGESTIONS = [
-  "How do I start trading?",
-  "Show me portfolio help",
-  "How can I deposit funds?",
-  "Explain leverage trading",
-  "Where can I verify my account?",
-  "What are today's market trends?"
+  "How do I use the Technical suite?",
+  "How can I compare two stocks?",
+  "What is the AI Copilot?",
+  "Where can I find market news?",
+  "How do I manage my watchlist?",
+  "What's on the dashboard?"
 ];
 
 export function SupportChat() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [msgs, setMsgs] = useState<Message[]>([
-    { role: 'bot', text: 'Hello! I am the NEXUS Support Bot. How can I help you today?' }
+    { role: 'bot', text: 'Hello! I am the NEXUS Assistant. I can help you navigate the dashboard and use our analysis tools. What would you like to explore?' }
   ]);
   const [inp, setInp] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -49,21 +49,27 @@ export function SupportChat() {
     // Robust local response generator to bypass all external API limitations
     const generateResponse = (t: string) => {
       const q = t.toLowerCase();
-      if (q.includes('start') || q.includes('begin')) return "To start trading, first deposit funds into your wallet, then choose a trading pair from the market section. You can place Market, Limit, or Stop orders directly from the trading panel.";
-      if (q.includes('verify') || q.includes('verification') || q.includes('kyc')) return "You can complete account verification from the Profile → Verification section. Upload a valid government-issued ID and complete facial verification for full access.";
-      if (q.includes('leverage') || q.includes('margin')) return "Leverage trading allows you to trade with borrowed funds to increase position size. While it can increase profits, it also increases risk significantly. Please use caution.";
-      if (q.includes('deposit') || q.includes('add money') || q.includes('fund')) return "To deposit funds, go to your Wallet section and click 'Deposit'. We support bank transfers, credit cards, and crypto deposits.";
-      if (q.includes('withdraw') || q.includes('cash out')) return "Withdrawals may remain pending during security checks or network congestion. You can track the current status from the Transaction History section.";
-      if (q.includes('portfolio') || q.includes('holdings')) return "Your portfolio shows a summary of all your assets. Go to the Overview page to track your holdings and PnL.";
-      if (q.includes('trend') || q.includes('market') || q.includes('today')) return "The market is currently highly volatile. Please check the 'Top Movers' section on your Dashboard for real-time changes.";
-      if (q.includes('hello') || q.includes('hi ') || q === 'hi' || q.includes('hey')) return "Hello! How can I assist you with your trading today?";
-      if (q.includes('who are you') || q.includes('your name') || q.includes('what are you')) return "I am the NEXUS Support Bot! An AI assistant designed to help you navigate the platform, understand trading basics, and manage your account.";
-      if (q.includes('fee') || q.includes('cost') || q.includes('charge')) return "Trading fees are based on a maker/taker model. Standard fee is **0.1%** per trade. Withdrawals vary based on the network.";
-      if (q.includes('security') || q.includes('safe') || q.includes('hack')) return "We employ industry-leading security practices, including cold storage for 95% of funds, 2FA, and strict withdrawal whitelists.";
-      if (q.includes('thank')) return "You're very welcome! Let me know if you need help with anything else.";
-      if (q.includes('help')) return "I can help you with account verification, deposits/withdrawals, fees, and basic trading concepts. Just ask!";
+      if (q.includes('technical') || q.includes('chart') || q.includes('indicator')) return "The **Technical** page provides RSI, SMA, and Bollinger Bands for any supported ticker. You can find it in the sidebar.";
+      if (q.includes('compare') || q.includes('versus') || q.includes(' vs ')) return "Use the **Compare** tool to view two stocks side-by-side with radar charts and fundamental metrics comparison.";
+      if (q.includes('copilot') || q.includes('ai chat')) return "The **AI Copilot** uses live fundamental data to provide investment signals and deep-dive analysis on specific tickers.";
+      if (q.includes('news') || q.includes('sentiment')) return "Our **News** feed aggregates real-time headlines and provides a composite 'Fear & Greed' sentiment score for the market.";
+      if (q.includes('watchlist') || q.includes('settings') || q.includes('api')) return "You can manage your watchlist and check your API key status in the **Settings** section.";
+      if (q.includes('dashboard') || q.includes('overview')) return "The **Dashboard** gives you a high-level view of market KPIs, top movers, and a sector heatmap.";
+      if (q.includes('search') || q.includes('lookup')) return "Use the search bar at the top or on the Search page to find data for over 500+ US equities.";
       
-      return "I apologize, but I don't have specific information on that right now. Could you clarify your question? You can ask me about **deposits**, **fees**, **verification**, or **trading basics**.";
+      if (q.includes('trade') || q.includes('buy') || q.includes('sell') || q.includes('deposit') || q.includes('wallet') || q.includes('money')) {
+        return "NEXUS is an **analytics and research dashboard**, not a brokerage. We do not support direct trading, wallets, or fund deposits. I can help you analyze markets to make better informed decisions elsewhere!";
+      }
+
+      if (q.includes('bangladesh') || q.includes('bd ') || q.includes('dse')) {
+        return "Currently, NEXUS focuses on **US Equities (S&P 500)** via our data providers. We do not have support for Bangladeshi stock exchanges at this time.";
+      }
+
+      if (q.includes('hello') || q.includes('hi ') || q === 'hi' || q.includes('hey')) return "Hello! I'm the NEXUS Assistant. I can help with dashboard features, stock lookup, comparison, and technical analysis.";
+      if (q.includes('who are you') || q.includes('your name')) return "I am the NEXUS Assistant, designed to help you navigate our fintech analytics platform.";
+      if (q.includes('thank')) return "You're very welcome! Let me know if you need help with our analysis tools.";
+      
+      return "I can help with dashboard features, stock lookup, comparison, and technical analysis. What would you like to know more about?";
     };
 
     setTimeout(() => {
@@ -133,7 +139,7 @@ export function SupportChat() {
             <Bot size={14} color="white" />
           </div>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: U.text }}>NEXUS Support</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: U.text }}>NEXUS Assistant</div>
             <div style={{ fontSize: 10, color: U.emerald, display: 'flex', alignItems: 'center', gap: 4 }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: U.emerald, display: 'inline-block', boxShadow: `0 0 6px ${U.emeraldSoft}` }} />
               Online

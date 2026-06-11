@@ -1,5 +1,4 @@
 import { fetchFundamentals, fetchQuote, fetchNews, fetchSectors, } from '@/lib/providers/orchestrator';
-import { SP500_TOP100 } from '@/lib/symbols/sp500-top100';
 import ALL_SYMBOLS from '@/lib/symbols/stock-symbols.json';
 import type { NormalizedFundamentals } from '@/lib/providers/types';
 

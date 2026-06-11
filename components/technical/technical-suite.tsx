@@ -97,15 +97,26 @@ export default function TechnicalSuite() {
   }, []);
 
   useEffect(() => {
-    if (!searchQuery.trim()) { setSearchResults([]); return; }
+    let active = true;
+    if (!searchQuery.trim()) {
+      Promise.resolve().then(() => {
+        if (active) setSearchResults([]);
+      });
+      return () => { active = false; };
+    }
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       try {
         const res = await fetch(`/api/symbols?q=${encodeURIComponent(searchQuery)}`);
         if (!res.ok) return;
-        setSearchResults(await res.json());
+        const data = await res.json();
+        if (active) setSearchResults(data);
       } catch {}
     }, 200);
+    return () => {
+      active = false;
+      clearTimeout(debounceRef.current);
+    };
   }, [searchQuery]);
   const [tf, setTf] = useState("1M");
   const [allCandles, setAllCandles] = useState<any[]>([]);
@@ -123,9 +134,11 @@ export default function TechnicalSuite() {
 
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
-    setError(null);
     const load = async () => {
+      await Promise.resolve();
+      if (!mounted) return;
+      setLoading(true);
+      setError(null);
       try {
         const res = await fetch(`/api/market/candles?symbol=${sel}`);
         if (!res.ok) {

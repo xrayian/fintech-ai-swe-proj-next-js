@@ -52,6 +52,7 @@ export default function AICopilot() {
 
 
 
+
   const loadSymbol = useCallback(async (sym: string) => {
     if (fundamentalsMap[sym]) return;
     setLoadingSymbols(p => new Set(p).add(sym));

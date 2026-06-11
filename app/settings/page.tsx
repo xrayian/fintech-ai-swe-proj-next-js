@@ -43,6 +43,7 @@ export default function SettingsPage() {
 
 
 
+
   const connections = [
     { name: 'Finnhub', ok: conn.finnhub, label: 'Market data (primary)' },
     { name: 'Alpha Vantage', ok: conn.alphaVantage, label: 'Market data (fallback)' },

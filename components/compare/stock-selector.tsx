@@ -38,16 +38,26 @@ export function StockSelector({ value, onChange, exclude, accent, accentRgb, lab
   }, []);
 
   useEffect(() => {
-    if (!search.trim()) { setApiResults([]); return; }
+    let active = true;
+    if (!search.trim()) {
+      Promise.resolve().then(() => {
+        if (active) setApiResults([]);
+      });
+      return () => { active = false; };
+    }
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       try {
         const res = await fetch(`/api/symbols?q=${encodeURIComponent(search)}`);
         if (!res.ok) return;
-        setApiResults(await res.json());
+        const data = await res.json();
+        if (active) setApiResults(data);
       } catch {}
     }, 200);
-    return () => clearTimeout(debounceRef.current);
+    return () => {
+      active = false;
+      clearTimeout(debounceRef.current);
+    };
   }, [search]);
 
   const optionEntries = Object.entries(options);

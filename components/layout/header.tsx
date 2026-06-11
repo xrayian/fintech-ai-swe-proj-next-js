@@ -1,12 +1,13 @@
 'use client';
 
-import { Menu, X, Search, Settings } from 'lucide-react';
+import { Menu, X, Search, Settings, Bell } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { U } from '@/lib/constants';
 import { Btn } from '@/components/shared/btn';
 import { NAV } from './sidebar';
 import { useResponsive } from '@/hooks/use-responsive';
+import { useNotifications } from '@/components/shared/notification-provider';
 
 export const SUBS: Record<string, string> = {
   "/dashboard": "Live market intelligence dashboard",
@@ -27,6 +28,7 @@ interface HeaderProps {
 export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   const { isMobile } = useResponsive();
   const pathname = usePathname();
+  const { unreadCount } = useNotifications();
   const activeNav = NAV.find(n => n.href === pathname) || NAV[0];
   const sub = SUBS[pathname] || SUBS["/dashboard"];
 
@@ -72,8 +74,43 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
           ) : (
             <Link href="/search"><Btn variant="glass" size="md"><Search size={13} /> Search</Btn></Link>
           )}
+
+          <Link href="/notifications" style={{ position: "relative", display: "inline-block", textDecoration: "none" }}>
+            {isMobile ? (
+              <button style={{ width: 36, height: 36, borderRadius: 10, background: U.glass, backdropFilter: "blur(24px) saturate(150%)", border: `1px solid ${U.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                <Bell size={14} color={pathname === "/notifications" ? U.cyan : U.textDim} />
+              </button>
+            ) : (
+              <Btn variant={pathname === "/notifications" ? "cyan" : "glass"} size="md">
+                <Bell size={13} /> Notifications
+              </Btn>
+            )}
+            {unreadCount > 0 && (
+              <span style={{
+                position: "absolute",
+                top: -3,
+                right: -3,
+                background: U.rose,
+                color: "#ffffff",
+                fontSize: 8,
+                fontWeight: 800,
+                borderRadius: "50%",
+                width: 15,
+                height: 15,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: `0 0 8px ${U.rose}`,
+                border: `1.5px solid #0a0a0f`,
+                pointerEvents: "none"
+              }}>
+                {unreadCount}
+              </span>
+            )}
+          </Link>
+
           <Link href="/settings">
-            <Btn variant="glass" size="md"><Settings size={13} /> Settings</Btn>
+            <Btn variant={pathname === "/settings" ? "cyan" : "glass"} size="md"><Settings size={13} /> Settings</Btn>
           </Link>
         </div>
       </div>

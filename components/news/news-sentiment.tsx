@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ChevronRight, ChevronDown } from 'lucide-react';
+import { ChevronRight, ChevronDown, ExternalLink } from 'lucide-react';
 import { U, fmt } from '@/lib/constants';
 import { GlassCard } from '@/components/shared/glass-card';
 import { ErrorMessage } from '@/components/shared/error-message';
@@ -110,6 +110,40 @@ export default function NewsSentiment() {
                     <strong style={{ color: U.text }}>AI Analysis: </strong>
                     {item.fearScore > 60 ? `This article signals elevated market fear (score ${item.fearScore}/100). Historically, fear scores above 60 correlate with short-term selling pressure. Consider monitoring correlated positions.` : item.fearScore < 30 ? `Strong greed signal detected (score ${item.fearScore}/100). While bullish for momentum strategies, elevated sentiment in this range has preceded mean reversion in 68% of historical cases.` : `Neutral signal — fear score of ${item.fearScore}/100 suggests fairly priced market conditions for this event. Continue monitoring for trend shifts.`}
                   </div>
+                  {item.url && (
+                    <div style={{ marginTop: 10, display: "flex", justifyContent: "flex-end" }}>
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: c,
+                          textDecoration: "none",
+                          padding: "6px 12px",
+                          borderRadius: 8,
+                          background: `rgba(${rgb},0.08)`,
+                          border: `1px solid rgba(${rgb},0.2)`,
+                          transition: "all 0.15s ease",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = `rgba(${rgb},0.15)`;
+                          e.currentTarget.style.borderColor = `rgba(${rgb},0.35)`;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = `rgba(${rgb},0.08)`;
+                          e.currentTarget.style.borderColor = `rgba(${rgb},0.2)`;
+                        }}
+                      >
+                        Read Full Article on {item.source || "Source"} <ExternalLink size={11} />
+                      </a>
+                    </div>
+                  )}
                 </div>
               )}
             </GlassCard>

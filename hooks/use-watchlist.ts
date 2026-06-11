@@ -11,22 +11,27 @@ export function useWatchlist() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length) {
-          setWatchlist(parsed);
-          setReady(true);
-          return;
+    let active = true;
+    Promise.resolve().then(() => {
+      if (!active) return;
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length) {
+            setWatchlist(parsed);
+            setReady(true);
+            return;
+          }
         }
-      }
-    } catch {}
-    setWatchlist(SP500_TOP100);
-    setReady(true);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(SP500_TOP100));
-    } catch {}
+      } catch {}
+      setWatchlist(SP500_TOP100);
+      setReady(true);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(SP500_TOP100));
+      } catch {}
+    });
+    return () => { active = false; };
   }, []);
 
   const addSymbol = useCallback((sym: string, name: string) => {

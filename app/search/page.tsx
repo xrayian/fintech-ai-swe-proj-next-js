@@ -14,6 +14,8 @@ export default function SearchPage() {
   const { query, setQuery, results, loading, error, retry } = useSymbolSearch();
   const { watchlist } = useWatchlist();
 
+
+
   return (
     <div style={{ animation: "fi .4s ease" }}>
       <SectionTitle icon={SearchIcon}>Search</SectionTitle>

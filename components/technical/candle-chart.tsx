@@ -30,6 +30,28 @@ const CandleShape = (props: any) => {
   );
 };
 
+const CustomTooltip = ({ active, payload }: any) => {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload; if (!d) return null;
+  return (
+    <div style={{
+      background: U.navBg, padding: "10px 14px",
+      boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
+      border: `1px solid ${U.border}`, borderRadius: 10, backdropFilter: "blur(12px)"
+    }}>
+      <div style={{ fontSize: 10, color: U.textMute, marginBottom: 6, fontFamily: 'JetBrains Mono' }}>{d.date}</div>
+      {[["Open", d.open], ["High", d.high], ["Low", d.low], ["Close", d.close]].map(([k, v]) => (
+        <div key={k as string} style={{
+          display: "flex", justifyContent: "space-between", gap: 22, fontSize: 11,
+          color: k === "Close" ? (d.bullish ? U.up : U.down) : U.textDim, fontFamily: 'JetBrains Mono'
+        }}>
+          <span>{k as string}</span><span style={{ fontWeight: 600 }}>${fmt(v as number)}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export function CandleChart({ data, loading }: CandleChartProps) {
   if (!data.length) {
     return (
@@ -43,28 +65,6 @@ export function CandleChart({ data, loading }: CandleChartProps) {
   const minP = Math.min(...prices) - 5, maxP = Math.max(...prices) + 5;
   const last = data[data.length - 1], up = last.close >= last.open;
   const enriched = data.map(d => ({ ...d, mid: (d.open + d.close) / 2, minP, maxP }));
-
-  const TT = ({ active, payload }: any) => {
-    if (!active || !payload?.length) return null;
-    const d = payload[0]?.payload; if (!d) return null;
-    return (
-      <div style={{
-        background: U.navBg, padding: "10px 14px",
-        boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
-        border: `1px solid ${U.border}`, borderRadius: 10, backdropFilter: "blur(12px)"
-      }}>
-        <div style={{ fontSize: 10, color: U.textMute, marginBottom: 6, fontFamily: 'JetBrains Mono' }}>{d.date}</div>
-        {[["Open", d.open], ["High", d.high], ["Low", d.low], ["Close", d.close]].map(([k, v]) => (
-          <div key={k as string} style={{
-            display: "flex", justifyContent: "space-between", gap: 22, fontSize: 11,
-            color: k === "Close" ? (d.bullish ? U.up : U.down) : U.textDim, fontFamily: 'JetBrains Mono'
-          }}>
-            <span>{k as string}</span><span style={{ fontWeight: 600 }}>${fmt(v as number)}</span>
-          </div>
-        ))}
-      </div>
-    );
-  };
 
   return (
     <div>
@@ -92,7 +92,7 @@ export function CandleChart({ data, loading }: CandleChartProps) {
           <CartesianGrid strokeDasharray="2 4" stroke={U.border} vertical={false} />
           <XAxis dataKey="date" tick={{ fill: U.textMute, fontSize: 10, fontFamily: 'JetBrains Mono' }} tickLine={false} axisLine={false} interval={9} />
           <YAxis domain={[minP, maxP]} tick={{ fill: U.textMute, fontSize: 10, fontFamily: 'JetBrains Mono' }} tickLine={false} axisLine={false} width={48} tickFormatter={v => `$${v}`} />
-          <Tooltip content={<TT />} cursor={{ fill: U.glassLo }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: U.glassLo }} />
           <Bar dataKey="mid" isAnimationActive={false} shape={(p: any) => <CandleShape {...p} minP={minP} maxP={maxP} />} />
         </ComposedChart>
       </ResponsiveContainer>

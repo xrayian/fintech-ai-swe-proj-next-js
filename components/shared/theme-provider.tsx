@@ -14,11 +14,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('dark');
 
   useEffect(() => {
-    const saved = localStorage.getItem('nexus-theme') as Theme;
-    if (saved === 'light') {
-      setTheme('light');
-      document.documentElement.classList.add('light-mode');
-    }
+    let active = true;
+    Promise.resolve().then(() => {
+      if (!active) return;
+      const saved = localStorage.getItem('nexus-theme') as Theme;
+      if (saved === 'light') {
+        setTheme('light');
+        document.documentElement.classList.add('light-mode');
+      }
+    });
+    return () => { active = false; };
   }, []);
 
   const toggleTheme = () => {

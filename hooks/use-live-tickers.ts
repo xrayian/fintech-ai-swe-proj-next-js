@@ -18,15 +18,20 @@ export function useLiveTickers() {
   const mounted = useRef(true);
 
   useEffect(() => {
-    setLive(prev => {
-      const next = { ...prev };
-      for (const s of watchlist) {
-        if (!next[s.sym]) {
-          next[s.sym] = { sym: s.sym, name: s.name, price: 0, chg: 0, pct: 0 };
+    let active = true;
+    Promise.resolve().then(() => {
+      if (!active) return;
+      setLive(prev => {
+        const next = { ...prev };
+        for (const s of watchlist) {
+          if (!next[s.sym]) {
+            next[s.sym] = { sym: s.sym, name: s.name, price: 0, chg: 0, pct: 0 };
+          }
         }
-      }
-      return next;
+        return next;
+      });
     });
+    return () => { active = false; };
   }, [watchlist]);
 
   useEffect(() => {

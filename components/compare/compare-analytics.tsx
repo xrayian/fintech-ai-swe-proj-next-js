@@ -210,7 +210,13 @@ export default function CompareAnalytics({ initialSymbol }: { initialSymbol?: st
   const mountedRef = useRef(true);
   const { toast } = useToast();
 
-  useEffect(() => { setMounted(true); mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
+  useEffect(() => {
+    mountedRef.current = true;
+    Promise.resolve().then(() => {
+      if (mountedRef.current) setMounted(true);
+    });
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const loadSymbols = useCallback(async (symbols: string[]) => {
     setError(null);
@@ -235,7 +241,10 @@ export default function CompareAnalytics({ initialSymbol }: { initialSymbol?: st
   }, []);
 
   useEffect(() => {
-    loadSymbols([symA, symB]);
+    Promise.resolve().then(() => {
+      if (mountedRef.current) loadSymbols([symA, symB]);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const retry = useCallback(() => {

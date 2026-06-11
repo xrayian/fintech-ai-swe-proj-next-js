@@ -53,6 +53,11 @@ export async function fetchQuote(symbols: string[]): Promise<NormalizedQuote[]> 
     }));
 }
 
+/**
+ * @deprecated Currently unused in the application.
+ * This endpoint requires a premium/paid Finnhub API key.
+ * Retained only for possible future integration.
+ */
 export async function fetchCandles(symbol: string, resolution: string, count: number): Promise<NormalizedCandle[]> {
   const to = Math.floor(Date.now() / 1000);
   const from = to - count * { '1': 60, '5': 300, '15': 900, '30': 1800, '60': 3600, D: 86400, W: 604800, M: 2592000 }[resolution]!;
@@ -131,6 +136,11 @@ function scoreToSentiment(score: number): NormalizedNewsItem['sentiment'] {
   return 'Extreme Fear';
 }
 
+/**
+ * @deprecated Currently unused in the application.
+ * This endpoint requires a premium/paid Finnhub API key.
+ * Retained only for possible future integration.
+ */
 export async function fetchIndicators(symbol: string): Promise<NormalizedIndicators> {
   const to = Math.floor(Date.now() / 1000);
   const from = to - 86400 * 60;
@@ -176,6 +186,11 @@ export async function fetchKpis(): Promise<NormalizedKpis> {
   };
 }
 
+/**
+ * @deprecated Currently unused in the application (fallback logic only).
+ * This endpoint requires a premium/paid Finnhub API key.
+ * Retained only for possible future integration.
+ */
 export async function fetchSectors(): Promise<NormalizedSector[]> {
   const data = await fetchJson('/stock/sector-performance');
   if (!Array.isArray(data)) return [];

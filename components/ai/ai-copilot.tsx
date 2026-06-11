@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Sparkles, Bot, Send, Star, Search as SearchIcon, Lightbulb, Loader2, MessageSquare, BarChart3, Plus, X } from 'lucide-react';
+import { Sparkles, Bot, Send, Star, Lightbulb, Loader2, MessageSquare, BarChart3, Plus } from 'lucide-react';
 import { U, SCORECARD } from '@/lib/constants';
 import { computeScorecard, type ScorecardData } from '@/lib/scorecard-utils';
 import type { NormalizedFundamentals } from '@/lib/providers/types';
@@ -10,8 +10,10 @@ import { useResponsive } from '@/hooks/use-responsive';
 import { CubeLogo } from '@/components/shared/cube-logo';
 
 const COPILOT_SYMBOLS = SP500_TOP100.slice(0, 10).map(s => s.sym);
-interface SearchResult { sym: string; name: string; }
 import { ScoreCard } from './score-card';
+import { useSymbolSearch } from '@/hooks/use-symbol-search';
+import { SearchInput } from '@/components/search/search-input';
+import { SearchSuggestions } from '@/components/search/search-suggestions';
 
 type Message = {
   role: "assistant" | "user";
@@ -29,13 +31,9 @@ export default function AICopilot() {
   const [exp, se] = useState<string | null>(null);
   const [inputFocus, sif] = useState(false);
   const [streamBuf, sst] = useState("");
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [searching, setSearching] = useState(false);
+  const { query: searchQuery, setQuery: setSearchQuery, results: searchResults, loading: searching, clear: clearSearch } = useSymbolSearch();
   const [loadingSymbols, setLoadingSymbols] = useState<Set<string>>(new Set());
   const [fundamentalsMap, setFundamentalsMap] = useState<Record<string, NormalizedFundamentals>>({});
-  const searchRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const bot = useRef<HTMLDivElement>(null);
   const inpRef = useRef<HTMLTextAreaElement>(null);
 
@@ -52,19 +50,7 @@ export default function AICopilot() {
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (!searchQuery.trim()) { setSearchResults([]); return; }
-    setSearching(true);
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/symbols?q=${encodeURIComponent(searchQuery)}`);
-        if (!res.ok) return;
-        setSearchResults(await res.json());
-      } catch {} finally { setSearching(false); }
-    }, 200);
-    return () => clearTimeout(debounceRef.current);
-  }, [searchQuery]);
+
 
   const loadSymbol = useCallback(async (sym: string) => {
     if (fundamentalsMap[sym]) return;
@@ -184,12 +170,15 @@ export default function AICopilot() {
       <div style={{ padding: isMobile ? "10px 14px" : "14px 18px", borderBottom: `1px solid ${U.border}`, flexShrink: 0 }}>
         {!isMobile && <div style={{ fontSize: 10, fontWeight: 600, color: U.textMute, textTransform: "uppercase", letterSpacing: "0.14em", display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}><Star size={10} color={U.violet} /> Scorecards</div>}
         {!isMobile && <div style={{ fontSize: 11, color: U.textFaint, marginBottom: 8 }}>AI-scored investment signals</div>}
-        <div ref={searchRef} style={{ display: "flex", alignItems: "center", gap: 6, background: U.inputBg, border: `1px solid ${searchQuery ? U.violet : U.border}`, borderRadius: 12, padding: "8px 12px", transition: "all .15s", boxShadow: U.insetShadow }}>
-          <SearchIcon size={11} color={searchQuery ? U.violet : U.textMute} />
-          <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search any symbol..." style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: U.text, fontSize: 11 }} />
-          {searching && <Loader2 size={11} color={U.textMute} style={{ animation: "spin 1s linear infinite" }} />}
-          {searchQuery && !searching && <X size={12} color={U.textMute} style={{ cursor: "pointer", flexShrink: 0 }} onClick={() => { setSearchQuery(''); setSearchResults([]); }} />}
-        </div>
+        <SearchInput 
+          query={searchQuery} 
+          onChange={setSearchQuery} 
+          loading={searching} 
+          placeholder="Search any symbol..."
+          variant="small"
+          accent={U.violet}
+          onClear={clearSearch}
+        />
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "8px 12px" : "12px 14px" }}>
         {searchQuery.trim() ? (
@@ -200,21 +189,26 @@ export default function AICopilot() {
             {searchResults.filter(r => !scorecardMap[r.sym]).length > 0 && Object.entries(scorecardMap).filter(([sym, d]) => sym.toLowerCase().includes(searchQuery.toLowerCase()) || d.name.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 && (
               <div style={{ padding: "8px 14px 4px", fontSize: 9, fontWeight: 600, color: U.textFaint, textTransform: "uppercase", letterSpacing: "0.1em" }}>More results from search</div>
             )}
-            {searchResults.filter(r => !scorecardMap[r.sym]).map(r => {
-              const loading = loadingSymbols.has(r.sym);
-              return (
-                <div key={r.sym} onClick={() => loadSymbol(r.sym)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", cursor: "pointer", background: U.cardBg, boxShadow: U.cardShadow, border: U.cardBorder, borderRadius: 12, marginBottom: 6, transition: "all .15s" }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "var(--glass-hi)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = U.cardBg; }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: U.text, fontFamily: "'Inter',sans-serif", letterSpacing: "-0.02em" }}>{r.sym}</div>
-                    <div style={{ fontSize: 10, color: U.textMute, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</div>
+            <SearchSuggestions
+              query={searchQuery}
+              results={searchResults.filter(r => !scorecardMap[r.sym])}
+              onSelect={loadSymbol}
+              renderItem={(r, onSelect) => {
+                const loading = loadingSymbols.has(r.sym);
+                return (
+                  <div key={r.sym} onClick={onSelect} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", cursor: "pointer", background: U.glass, border: `1px solid ${U.border}`, borderRadius: 10, marginBottom: 6, transition: "all .15s" }}
+                    onMouseEnter={e => { e.currentTarget.style.background = U.glassHi; e.currentTarget.style.borderColor = U.borderHi; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = U.glass; e.currentTarget.style.borderColor = U.border; }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: U.text, letterSpacing: "-0.01em" }}>{r.sym}</div>
+                      <div style={{ fontSize: 10, color: U.textMute, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</div>
+                    </div>
+                    {loading ? <Loader2 size={12} color={U.cyan} style={{ animation: "spin 1s linear infinite" }} />
+                      : <span style={{ width: 26, height: 26, borderRadius: 8, background: U.cyanSoft, border: `1px solid rgba(34,211,238,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}><Plus size={13} color={U.cyan} /></span>}
                   </div>
-                  {loading ? <Loader2 size={12} color={U.cyan} style={{ animation: "spin 1s linear infinite" }} />
-                    : <span style={{ width: 26, height: 26, borderRadius: 8, background: U.cardBg, border: "1px solid rgba(34,211,238,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}><Plus size={13} color={U.cyan} /></span>}
-                </div>
-              );
-            })}
+                );
+              }}
+            />
           </>
         ) : (
           Object.entries(scorecardMap).map(([sym, d]) => (

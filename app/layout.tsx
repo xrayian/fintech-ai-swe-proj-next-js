@@ -3,10 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, TrendingUp, Bot, BarChart2, Globe } from 'lucide-react';
 import { AmbientBg } from '@/components/layout/ambient-bg';
 import { TickerTape } from '@/components/layout/ticker-tape';
-import { Sidebar } from '@/components/layout/sidebar';
+import { Sidebar, NAV } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { ToastProvider } from '@/components/shared/toast-provider';
 import { ThemeProvider } from '@/components/shared/theme-provider';
@@ -14,15 +13,6 @@ import { U } from '@/lib/constants';
 import { useResponsive } from '@/hooks/use-responsive';
 import { SupportChat } from '@/components/shared/support-chat';
 import "./globals.css";
-
-const MOBILE_NAV = [
-  { id: "dashboard", label: "Overview", icon: LayoutDashboard, href: "/dashboard" },
-  { id: "technical", label: "Technical", icon: TrendingUp, href: "/technical" },
-  { id: "copilot", label: "Copilot", icon: Bot, href: "/copilot" },
-  { id: "compare", label: "Compare", icon: BarChart2, href: "/compare" },
-  { id: "news", label: "News", icon: Globe, href: "/news" },
-];
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -66,12 +56,16 @@ export default function RootLayout({
               display: "flex", alignItems: "center", justifyContent: "space-around",
               zIndex: 100,
             }}>
-              {MOBILE_NAV.map(({ id, label, icon: Icon, href }) => {
+              {NAV.map(({ id, mobileLabel, icon: Icon, href }) => {
                 const act = pathname === href || (pathname === '/' && id === 'dashboard');
                 return (
-                  <Link key={id} href={href} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '6px 0', flex: 1 }}>
-                    <Icon size={18} color={act ? U.cyan : U.textMute} />
-                    <span style={{ fontSize: 9, fontWeight: act ? 700 : 500, color: act ? U.cyan : U.textMute }}>{label}</span>
+                  <Link key={id} href={href} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '6px 0', flex: 1, minWidth: 44 }}>
+                    <div style={{ position: "relative" }}>
+                      <Icon size={18} color={act ? U.cyan : U.textMute} />
+                      {id === "copilot" && <span style={{ position: "absolute", top: -2, right: -2, width: 6, height: 6, borderRadius: "50%", background: U.emerald, boxShadow: `0 0 6px ${U.emerald}`, animation: "pulse-dot 2.5s ease infinite" }} />}
+                      {id === "notifications" && <span style={{ position: "absolute", top: -4, right: -6, background: U.cyanSoft, color: U.cyan, fontSize: 8, fontWeight: 800, padding: "0 3px", borderRadius: 999 }}>3</span>}
+                    </div>
+                    <span style={{ fontSize: 9, fontWeight: act ? 700 : 500, color: act ? U.cyan : U.textMute }}>{mobileLabel}</span>
                   </Link>
                 );
               })}

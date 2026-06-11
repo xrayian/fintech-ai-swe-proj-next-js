@@ -16,7 +16,7 @@ export const SUBS: Record<string, string> = {
   "/news": "Global news feed with AI-assigned Fear/Greed sentiment scores",
   "/settings": "API connections and display preferences",
   "/notifications": "Price alerts, news alerts, and AI signals",
-  "/search": "Search across 8 tracked symbols",
+  "/search": "Search across NYSE stocks",
 };
 
 interface HeaderProps {
@@ -51,12 +51,14 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 style={{
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             margin: 0, fontSize: "var(--header-title-s)" as any, fontWeight: 700, color: U.text,
             letterSpacing: "-0.025em", lineHeight: 1.2
           }}>{activeNav.label}</h1>
           <div style={{
             fontSize: 12, color: U.textMute, marginTop: 2,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             visibility: "var(--header-sub-vis)" as any,
           }}>{sub}</div>
         </div>

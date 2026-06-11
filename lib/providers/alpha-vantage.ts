@@ -127,6 +127,10 @@ export async function fetchIndicators(symbol: string): Promise<NormalizedIndicat
   };
 }
 
+/**
+ * @deprecated Currently unused stub in the application.
+ * Retained only for possible future integration.
+ */
 export async function fetchNews(_symbols: string[]): Promise<NormalizedNewsItem[]> {
   return [];
 }

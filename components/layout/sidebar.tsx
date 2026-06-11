@@ -3,18 +3,21 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, TrendingUp, Bot, BarChart2, Globe
+  LayoutDashboard, TrendingUp, Bot, BarChart2, Globe, Search, Settings, Bell
 } from "lucide-react";
 import { U } from '@/lib/constants';
 import { useMarketStatus } from '@/hooks/use-market-status';
 
 
 export const NAV = [
-  { id: "dashboard", label: "Overview", icon: LayoutDashboard, href: "/dashboard" },
-  { id: "technical", label: "Technical Analysis", icon: TrendingUp, href: "/technical" },
-  { id: "copilot", label: "AI Copilot", icon: Bot, href: "/copilot" },
-  { id: "compare", label: "Compare Assets", icon: BarChart2, href: "/compare" },
-  { id: "news", label: "News Sentiment", icon: Globe, href: "/news" },
+  { id: "dashboard", label: "Overview", mobileLabel: "Overview", icon: LayoutDashboard, href: "/dashboard" },
+  { id: "technical", label: "Technical Analysis", mobileLabel: "Technical", icon: TrendingUp, href: "/technical" },
+  { id: "copilot", label: "AI Copilot", mobileLabel: "Copilot", icon: Bot, href: "/copilot" },
+  { id: "compare", label: "Compare Assets", mobileLabel: "Compare", icon: BarChart2, href: "/compare" },
+  { id: "news", label: "News Sentiment", mobileLabel: "News", icon: Globe, href: "/news" },
+  { id: "search", label: "Search", mobileLabel: "Search", icon: Search, href: "/search" },
+  { id: "notifications", label: "Notifications", mobileLabel: "Alerts", icon: Bell, href: "/notifications" },
+  { id: "settings", label: "Settings", mobileLabel: "Settings", icon: Settings, href: "/settings" },
 ];
 
 interface SidebarProps {
@@ -93,6 +96,10 @@ export function Sidebar({ open, mobile, onClose }: SidebarProps) {
                     width: 5, height: 5, borderRadius: "50%", background: U.emerald,
                     flexShrink: 0, boxShadow: `0 0 6px ${U.emerald}`, animation: "pulse-dot 2.5s ease infinite"
                   }} />}
+                  {id === "notifications" && <span style={{
+                    background: U.cyanSoft, color: U.cyan, fontSize: 10, fontWeight: 700,
+                    padding: "1px 6px", borderRadius: 999, flexShrink: 0
+                  }}>3</span>}
                 </div>
               </Link>
             );

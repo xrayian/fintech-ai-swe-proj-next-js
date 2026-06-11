@@ -15,7 +15,7 @@ export const SUBS: Record<string, string> = {
   "/copilot": "AI-powered investment coaching with live fundamentals",
   "/compare": "Side-by-side multivariate asset comparison via radar analysis",
   "/news": "Global news feed with AI-assigned Fear/Greed sentiment scores",
-  "/settings": "API connections and display preferences",
+  "/settings": "Watchlist management and display preferences",
   "/notifications": "Price alerts, news alerts, and AI signals",
   "/search": "Search across NYSE stocks",
 };

@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Server, Palette, CheckCircle, XCircle, BookmarkPlus, Trash2, Plus, RefreshCw } from 'lucide-react';
+import { Settings as SettingsIcon, Palette, BookmarkPlus, Trash2, Plus } from 'lucide-react';
 import { U } from '@/lib/constants';
 import { GlassCard } from '@/components/shared/glass-card';
 import { SectionTitle } from '@/components/shared/section-title';
@@ -13,49 +12,17 @@ import { SearchInput } from '@/components/search/search-input';
 import { SearchSuggestions } from '@/components/search/search-suggestions';
 
 export default function SettingsPage() {
-  const [conn, setConn] = useState<Record<string, boolean>>({});
   const { watchlist, addSymbol, removeSymbol, ready } = useWatchlist();
   const { query, setQuery, results, loading, clear } = useSymbolSearch();
-  const [clearing, setClearing] = useState(false);
   const { toast } = useToast();
   const { theme, toggleTheme } = useTheme();
-
-  useEffect(() => {
-    fetch('/api/settings').then(r => r.json()).then(setConn).catch(() => {});
-  }, []);
-
-  const clearCache = async () => {
-    setClearing(true);
-    try {
-      const res = await fetch('/api/cache', { method: 'DELETE' });
-      const data = await res.json();
-      if (data.ok) {
-        toast('success', `Cleared ${data.cleared} cached candle files`);
-      } else {
-        toast('error', data.error || 'Failed to clear cache');
-      }
-    } catch {
-      toast('error', 'Cache clear request failed');
-    } finally {
-      setClearing(false);
-    }
-  };
-
-
-
-
-  const connections = [
-    { name: 'Finnhub', ok: conn.finnhub, label: 'Market data (primary)' },
-    { name: 'Alpha Vantage', ok: conn.alphaVantage, label: 'Market data (fallback)' },
-    { name: 'Gemini AI', ok: conn.gemini, label: 'AI Copilot' },
-  ];
 
   return (
     <div style={{ animation: "fi .4s ease", maxWidth: 900, margin: "0 auto" }}>
       <SectionTitle icon={SettingsIcon}>Settings</SectionTitle>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "stretch", gridTemplateRows: "auto auto" }}>
-      <GlassCard style={{ padding: "24px 26px", gridColumn: 1, gridRow: "1 / span 2", display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <GlassCard style={{ padding: "24px 26px", display: "flex", flexDirection: "column" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18, paddingBottom: 16, borderBottom: `1px solid ${U.border}` }}>
           <div style={{ width: 36, height: 36, borderRadius: 10, background: U.cyanSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <BookmarkPlus size={17} color={U.cyan} />
@@ -115,53 +82,7 @@ export default function SettingsPage() {
         )}
       </GlassCard>
 
-      <GlassCard style={{ padding: "24px 26px", gridColumn: 2, gridRow: 1 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18, paddingBottom: 16, borderBottom: `1px solid ${U.border}` }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: U.cyanSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Server size={17} color={U.cyan} />
-          </div>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: U.text }}>API Connections</div>
-            <div style={{ fontSize: 11, color: U.textMute }}>Data provider status</div>
-          </div>
-        </div>
-        {connections.map(c => {
-          return (
-            <div key={c.name} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 10px", borderRadius: 8, marginBottom: 2 }}
-              onMouseEnter={e => (e.currentTarget.style.background = U.glass)}
-              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-            >
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: c.ok ? U.emeraldSoft : U.roseSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {c.ok ? <CheckCircle size={15} color={U.emerald} /> : <XCircle size={15} color={U.rose} />}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: U.text }}>{c.name}</div>
-                <div style={{ fontSize: 11, color: U.textMute }}>{c.label}</div>
-              </div>
-              <span style={{ fontSize: 11, fontWeight: 600, color: c.ok ? U.emerald : U.rose, background: c.ok ? U.emeraldSoft : U.roseSoft, padding: "4px 12px", borderRadius: 999 }}>{c.ok ? 'Connected' : 'Not set'}</span>
-            </div>
-          );
-        })}
-        <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${U.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: U.text }}>Candle Cache</div>
-            <div style={{ fontSize: 11, color: U.textMute, marginTop: 2 }}>Clears cached historical data, forcing fresh API calls</div>
-          </div>
-          <button onClick={clearCache} disabled={clearing} style={{
-            display: "flex", alignItems: "center", gap: 7,
-            padding: "9px 16px", borderRadius: 10,
-            border: `1px solid ${U.borderHi}`,
-            background: U.glassHi, color: clearing ? U.textMute : U.text,
-            fontSize: 12, fontWeight: 600, cursor: clearing ? "not-allowed" : "pointer",
-            opacity: clearing ? 0.6 : 1, transition: "all .15s", whiteSpace: "nowrap"
-          }}>
-            <RefreshCw size={13} style={{ animation: clearing ? "spin .8s linear infinite" : "none" }} />
-            {clearing ? "Clearing..." : "Clear Cache"}
-          </button>
-        </div>
-      </GlassCard>
-
-      <GlassCard style={{ padding: "24px 26px", gridColumn: 2, gridRow: 2 }}>
+      <GlassCard style={{ padding: "24px 26px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18, paddingBottom: 16, borderBottom: `1px solid ${U.border}` }}>
           <div style={{ width: 36, height: 36, borderRadius: 10, background: U.violetSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Palette size={17} color={U.violet} />

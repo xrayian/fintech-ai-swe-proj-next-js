@@ -1,17 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Bell, 
   BellOff, 
   Plus, 
   Trash2, 
   Check, 
+  ChevronUp,
+  ChevronDown,
   ArrowUpRight, 
   ArrowDownRight, 
   AlertCircle,
   FileText,
-  Trash
+  Trash,
+  Search as SearchIcon,
+  X,
+  Loader2,
 } from 'lucide-react';
 import { U, TICKERS } from '@/lib/constants';
 import { GlassCard } from '@/components/shared/glass-card';
@@ -19,6 +25,8 @@ import { SectionTitle } from '@/components/shared/section-title';
 import { Btn } from '@/components/shared/btn';
 import { useNotifications } from '@/components/shared/notification-provider';
 import { useLiveTickers } from '@/hooks/use-live-tickers';
+import { useWatchlist } from '@/hooks/use-watchlist';
+import { useResponsive } from '@/hooks/use-responsive';
 
 export default function NotificationsPage() {
   const {
@@ -34,11 +42,85 @@ export default function NotificationsPage() {
   } = useNotifications();
 
   const live = useLiveTickers();
+  const { watchlist } = useWatchlist();
+  const { isMobile } = useResponsive();
 
   // Create form state
   const [symbol, setSymbol] = useState(TICKERS[0].sym);
   const [type, setType] = useState<'above' | 'below'>('above');
   const [targetValue, setTargetValue] = useState('');
+
+  // Searchable dropdown state
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<{ sym: string; name: string }[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
+  const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (!dropdownOpen) return;
+      const target = e.target as Node;
+      const inTrigger = dropdownRef.current?.contains(target);
+      const inPortal = portalRef.current?.contains(target);
+      if (!inTrigger && !inPortal) {
+        closeDropdown();
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [dropdownOpen]);
+
+  useEffect(() => {
+    let active = true;
+    if (!searchQuery.trim()) {
+      Promise.resolve().then(() => { if (active) setSearchResults([]); });
+      return () => { active = false; };
+    }
+    setSearchLoading(true);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/symbols?q=${encodeURIComponent(searchQuery)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (active) setSearchResults(data);
+      } catch {} finally {
+        if (active) setSearchLoading(false);
+      }
+    }, 200);
+    return () => { active = false; clearTimeout(debounceRef.current); };
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (dropdownOpen && !isMobile && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPopupStyle({
+        position: "fixed",
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 9999,
+      });
+    }
+  }, [dropdownOpen, isMobile]);
+
+  const dropdownSymbols = searchQuery.trim()
+    ? searchResults
+    : watchlist.slice(0, 20).map(t => ({ sym: t.sym, name: t.name }));
+
+  const closeDropdown = () => {
+    setDropdownOpen(false);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
 
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
@@ -90,30 +172,127 @@ export default function NotificationsPage() {
             
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ display: "flex", gap: 10 }}>
-                {/* Symbol Select */}
-                <div style={{ flex: 1 }}>
+                {/* Symbol Select (searchable) */}
+                <div style={{ flex: 1 }} ref={dropdownRef}>
                   <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: U.textMute, marginBottom: 5, textTransform: "uppercase" }}>Asset</label>
-                  <select
-                    value={symbol}
-                    onChange={(e) => setSymbol(e.target.value)}
+                  <div ref={triggerRef}
+                    onClick={() => { setDropdownOpen(!dropdownOpen); if (!dropdownOpen) { setSearchQuery(''); setSearchResults([]); } }}
                     style={{
                       width: "100%",
                       background: U.inputBg || "rgba(255,255,255,0.05)",
-                      border: `1px solid ${U.border}`,
+                      border: `1px solid ${dropdownOpen ? U.cyan : U.border}`,
                       borderRadius: 8,
                       color: U.text,
                       padding: "8px 12px",
                       fontSize: 13,
                       outline: "none",
-                      cursor: "pointer"
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      transition: "all .15s",
+                      userSelect: "none"
                     }}
                   >
-                    {TICKERS.map(t => (
-                      <option key={t.sym} value={t.sym} style={{ background: "#0a0a0f", color: "#fff" }}>
-                        {t.sym} - {t.name}
-                      </option>
-                    ))}
-                  </select>
+                    <span style={{ fontWeight: 700, color: U.cyan, flex: 1 }}>{symbol}</span>
+                    {dropdownOpen ? <ChevronUp size={13} color={U.textMute} /> : <ChevronDown size={13} color={U.textMute} />}
+                  </div>
+
+                  {dropdownOpen && mounted && createPortal(
+                    <div ref={portalRef}>
+                    {isMobile ? (
+                      <div style={{
+                        position: "fixed", inset: 0, zIndex: 9999,
+                        background: "rgba(0,0,0,0.6)", display: "flex", flexDirection: "column",
+                        animation: "fi .15s ease"
+                      }} onClick={(e) => { if (e.target === e.currentTarget) closeDropdown(); }}>
+                        <div style={{
+                          marginTop: "env(safe-area-inset-top, 0px)",
+                          background: U.navBg, backdropFilter: "blur(24px) saturate(150%)",
+                          borderBottom: `1px solid ${U.border}`,
+                          display: "flex", alignItems: "center", gap: 10, padding: "14px 16px"
+                        }}>
+                          <button onClick={closeDropdown}
+                            style={{ background: "transparent", border: "none", cursor: "pointer", color: U.text, padding: 4, display: "flex" }}>
+                            <ChevronDown size={20} style={{ transform: "rotate(90deg)" }} />
+                          </button>
+                          <input autoFocus value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                            placeholder="Search any symbol..."
+                            style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: U.text, fontSize: 15 }}
+                          />
+                          {searchLoading && <Loader2 size={14} color={U.textMute} style={{ animation: "spin .8s linear infinite" }} />}
+                          {searchQuery && <X size={18} color={U.textMute} style={{ cursor: "pointer" }} onClick={() => { setSearchQuery(''); setSearchResults([]); }} />}
+                        </div>
+                        <div style={{ flex: 1, overflow: "auto", padding: 8 }}>
+                          {dropdownSymbols.map(r => {
+                            const isSelected = r.sym === symbol;
+                            return (
+                              <div key={r.sym} onClick={() => { setSymbol(r.sym); closeDropdown(); }}
+                                style={{
+                                  padding: "14px 16px", cursor: "pointer", borderRadius: 10,
+                                  background: isSelected ? U.cyanSoft : "transparent",
+                                  display: "flex", alignItems: "center", gap: 12, marginBottom: 2
+                                }}
+                              >
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <span style={{ fontSize: 15, fontWeight: 700, color: isSelected ? U.cyan : U.text }}>{r.sym}</span>
+                                  <div style={{ fontSize: 11, color: U.textMute, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</div>
+                                </div>
+                                {isSelected && <span style={{ fontSize: 10, color: U.cyan, background: U.cyanSoft, padding: "3px 8px", borderRadius: 999, fontWeight: 600, border: `1px solid ${U.cyan}44` }}>active</span>}
+                              </div>
+                            );
+                          })}
+                          {searchQuery.trim() && !searchLoading && dropdownSymbols.length === 0 && (
+                            <div style={{ padding: "40px 20px", textAlign: "center", fontSize: 13, color: U.textMute }}>No results found</div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{
+                        ...popupStyle,
+                        background: U.navBg, backdropFilter: "blur(24px) saturate(150%)", borderRadius: 12,
+                        border: `1px solid ${U.borderHi}`, overflow: "hidden",
+                        boxShadow: "0 16px 48px rgba(0,0,0,0.5)", animation: "fi .12s ease"
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderBottom: `1px solid ${U.border}` }}>
+                          <SearchIcon size={13} color={U.textMute} />
+                          <input autoFocus value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                            placeholder="Search any symbol..."
+                            style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: U.text, fontSize: 12 }}
+                          />
+                          {searchLoading && <Loader2 size={12} color={U.textMute} style={{ animation: "spin .8s linear infinite" }} />}
+                          {searchQuery && <X size={13} color={U.textMute} style={{ cursor: "pointer" }} onClick={() => { setSearchQuery(''); setSearchResults([]); }} />}
+                        </div>
+                        <div style={{ maxHeight: 240, overflow: "auto" }}>
+                          {dropdownSymbols.map(r => {
+                            const isSelected = r.sym === symbol;
+                            return (
+                              <div key={r.sym} onClick={() => { setSymbol(r.sym); closeDropdown(); }}
+                                style={{
+                                  padding: "10px 14px", cursor: "pointer", borderBottom: `1px solid ${U.border}`,
+                                  background: isSelected ? U.cyanSoft : "transparent",
+                                  display: "flex", alignItems: "center", gap: 10
+                                }}
+                                onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = U.glass; }}
+                                onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+                              >
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: isSelected ? U.cyan : U.text }}>{r.sym}</span>
+                                  <div style={{ fontSize: 10, color: U.textMute, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</div>
+                                </div>
+                                {isSelected && <span style={{ fontSize: 9, color: U.cyan, background: U.cyanSoft, padding: "2px 6px", borderRadius: 999, fontWeight: 600, border: `1px solid ${U.cyan}44` }}>selected</span>}
+                              </div>
+                            );
+                          })}
+                          {searchQuery.trim() && !searchLoading && dropdownSymbols.length === 0 && (
+                            <div style={{ padding: "16px", textAlign: "center", fontSize: 11, color: U.textMute }}>No results found</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>,
+                    document.body
+                  )}
                 </div>
 
                 {/* Condition Type */}

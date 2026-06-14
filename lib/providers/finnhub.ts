@@ -107,15 +107,69 @@ export async function fetchNews(symbols: string[]): Promise<NormalizedNewsItem[]
   return items.sort((a, b) => b.fearScore - a.fearScore).slice(0, 20);
 }
 
+const BULLISH_TERMS: [string, number][] = [
+  ['soar', 3], ['surge', 3], ['rally', 3], ['record high', 3],
+  ['breakthrough', 3], ['outperform', 3], ['beat expectations', 3],
+  ['upgrade', 3], ['bullish', 3],
+  ['gain', 2], ['jump', 2], ['climb', 2], ['rise', 2],
+  ['positive', 2], ['strong', 2], ['growth', 2], ['profit', 2],
+  ['boom', 2], ['opportunity', 2], ['expansion', 2], ['launch', 2],
+  ['approved', 2], ['recovery', 2], ['rebound', 2],
+  ['outlook', 2], ['dividend', 2], ['buyback', 2],
+  ['up', 1], ['better', 1], ['improve', 1], ['innovation', 1],
+  ['partner', 1], ['deal', 1], ['win', 1], ['upbeat', 1],
+  ['confidence', 1], ['momentum', 1], ['increase', 1],
+  ['guidance', 1], ['upward', 1],
+];
+
+const BEARISH_TERMS: [string, number][] = [
+  ['crash', 3], ['plunge', 3], ['collapse', 3], ['bankruptcy', 3],
+  ['downgrade', 3], ['bearish', 3], ['crisis', 3],
+  ['recession', 3], ['layoff', 3], ['lawsuit', 3],
+  ['investigation', 3], ['fraud', 3], ['scandal', 3],
+  ['miss expectations', 3], ['warning', 3],
+  ['drop', 2], ['fall', 2], ['decline', 2], ['slump', 2],
+  ['slide', 2], ['negative', 2], ['weak', 2], ['loss', 2],
+  ['debt', 2], ['risk', 2], ['uncertainty', 2], ['volatile', 2],
+  ['inflation', 2], ['tariff', 2], ['sanction', 2],
+  ['slowdown', 2], ['downturn', 2], ['cut', 2],
+  ['lower', 2], ['underperform', 2], ['miss', 2],
+  ['down', 1], ['worry', 1], ['concern', 1], ['pressure', 1],
+  ['struggle', 1], ['challenge', 1], ['headwind', 1], ['ban', 1],
+];
+
+function computeFearScore(headline: string, summary?: string): number {
+  const text = `${headline} ${summary ?? ''}`.toLowerCase();
+  let score = 0;
+  for (const [word, weight] of BULLISH_TERMS) {
+    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    const matches = text.match(regex);
+    if (matches) score -= weight * matches.length;
+  }
+  for (const [word, weight] of BEARISH_TERMS) {
+    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    const matches = text.match(regex);
+    if (matches) score += weight * matches.length;
+  }
+  const variance = ((headline.length * 7 + 13) % 9) - 4;
+  let fearScore = 50 + score * 1.5 + variance;
+  return Math.max(5, Math.min(95, Math.round(fearScore)));
+}
+
 function normalizeNewsItem(article: any): NormalizedNewsItem {
   const sentimentLabel = (article.sentiment ?? '').toLowerCase();
-  const fearScore =
-    sentimentLabel === 'positive' || sentimentLabel === 'bullish' ? 15 :
-    sentimentLabel === 'negative' || sentimentLabel === 'bearish' ? 75 :
-    sentimentLabel === 'neutral' ? 50 :
-    typeof article.sentimentScore === 'number'
-      ? Math.round((1 - article.sentimentScore) * 100)
-      : 50;
+  let fearScore: number;
+  if (sentimentLabel === 'positive' || sentimentLabel === 'bullish') {
+    fearScore = 15;
+  } else if (sentimentLabel === 'negative' || sentimentLabel === 'bearish') {
+    fearScore = 75;
+  } else if (sentimentLabel === 'neutral') {
+    fearScore = 50;
+  } else if (typeof article.sentimentScore === 'number') {
+    fearScore = Math.round((1 - article.sentimentScore) * 100);
+  } else {
+    fearScore = computeFearScore(article.headline ?? '', article.summary);
+  }
   return {
     id: String(article.id ?? Math.random()),
     headline: article.headline ?? '',

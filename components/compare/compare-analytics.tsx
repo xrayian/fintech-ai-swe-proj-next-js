@@ -6,7 +6,7 @@ import {
   RadarChart, Radar, PolarGrid,
   PolarAngleAxis, PolarRadiusAxis, Legend, ResponsiveContainer
 } from 'recharts';
-import { U, SCORECARD, fmt } from '@/lib/constants';
+import { U, fmt } from '@/lib/constants';
 import type { NormalizedFundamentals } from '@/lib/providers/types';
 import { computeScorecard, type ScorecardData } from '@/lib/scorecard-utils';
 import { StockSelector } from './stock-selector';
@@ -286,11 +286,11 @@ export default function CompareAnalytics({ initialSymbol }: { initialSymbol?: st
     for (const [sym, f] of Object.entries(fundamentalsMap)) {
       map[sym] = computeScorecard(f);
     }
-    if (Object.keys(map).length === 0) return SCORECARD as unknown as Record<string, ScorecardData>;
     return map;
   }, [fundamentalsMap]);
 
   const hasData = scorecardMap[symA] && scorecardMap[symB];
+  const showLoader = loading && !hasData && !error;
 
   return (
     <div style={{ animation: "fi .25s ease" }}>
@@ -316,16 +316,23 @@ export default function CompareAnalytics({ initialSymbol }: { initialSymbol?: st
         </div>
       </div>
 
-      {error && !hasData && (
+      {loading && (
+        <GlassCard style={{ padding: "40px", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>
+          <RefreshCw size={24} color={U.textMute} style={{ animation: "spin .8s linear infinite" }} />
+          <span style={{ color: U.textMute, fontSize: 13 }}>Loading fundamental data from live sources...</span>
+        </GlassCard>
+      )}
+
+      {!loading && error && !hasData && (
         <div style={{ marginBottom: 14 }}>
           <ErrorMessage message={error} onRetry={retry} />
         </div>
       )}
 
-      {!hasData && !error && (
+      {!loading && !hasData && !error && (
         <GlassCard style={{ padding: "40px", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>
-          <RefreshCw size={24} color={U.textMute} style={{ animation: "spin .8s linear infinite" }} />
-          <span style={{ color: U.textMute, fontSize: 13 }}>Loading fundamental data from live sources...</span>
+          <AlertTriangle size={24} color={U.amber} />
+          <span style={{ color: U.textMute, fontSize: 13 }}>No fundamental data available for selected symbols.</span>
         </GlassCard>
       )}
 

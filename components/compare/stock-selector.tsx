@@ -91,10 +91,18 @@ export function StockSelector({ value, onChange, exclude, accent, accentRgb, lab
         <div style={{ display: "flex", justifyItems: "space-between", alignItems: "flex-start" }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 28, fontWeight: 700, color: U.text, lineHeight: 1, letterSpacing: "-0.03em" }}>{value}</div>
-            <div style={{ fontSize: 11, color: U.textDim, marginTop: 5 }}>{selected?.name}</div>
+            <div style={{ fontSize: 11, color: U.textDim, marginTop: 5 }}>{selected?.name || "\u2014"}</div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
-            <ScoreBadge score={selected?.score || 0} isWinner={isWinner} />
+            {selected ? <ScoreBadge score={selected.score} isWinner={isWinner} /> : (
+              <div style={{
+                borderRadius: 12, padding: "8px 12px", textAlign: "center", minWidth: 50, flexShrink: 0,
+                background: U.glassLo,
+              }}>
+                <div style={{ fontSize: 20, fontWeight: 700, color: U.textMute, fontFamily: "'Inter',sans-serif", lineHeight: 1, letterSpacing: "-0.03em" }}>{"\u2014"}</div>
+                <div style={{ fontSize: 8, color: U.textMute, marginTop: 3, fontWeight: 500, letterSpacing: "0.08em", opacity: .5 }}>/10</div>
+              </div>
+            )}
             <div style={{ fontSize: 10, color: isWinner ? accent : `rgba(${accentRgb},0.5)`, display: "flex", alignItems: "center", gap: 4, fontWeight: isWinner ? 600 : 400 }}>
               {isWinner ? <Trophy size={10} /> : (open ? <ChevronUp size={10} /> : <ChevronDown size={10} />)}
               {isWinner ? "Leader" : (open ? "Collapse" : "Change")}
@@ -105,11 +113,11 @@ export function StockSelector({ value, onChange, exclude, accent, accentRgb, lab
           <span style={{
             background: `rgba(${accentRgb},0.12)`, color: accent, borderRadius: 999, border: `1px solid rgba(${accentRgb},0.25)`,
             padding: "4px 10px", fontSize: 10, fontWeight: 600
-          }}>{selected?.verdict}</span>
+          }}>{selected?.verdict || "\u2014"}</span>
           <span style={{
             background: U.glassLo, color: U.textMute, borderRadius: 999, border: `1px solid ${U.border}`,
             padding: "4px 10px", fontSize: 10, fontWeight: 500
-          }}>{selected?.tag}</span>
+          }}>{selected?.tag || "\u2014"}</span>
         </div>
       </GlassCard>
 

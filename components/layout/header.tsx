@@ -33,11 +33,11 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   const sub = SUBS[pathname] || SUBS["/dashboard"];
 
   return (
-    <div style={{
-      background: U.headerBg, borderBottom: `1px solid ${U.border}`,
-      backdropFilter: "blur(20px)", flexShrink: 0, padding: "0 22px", position: "relative", zIndex: 5
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, paddingTop: 14, paddingBottom: 12 }}>
+        <div style={{
+          background: U.headerBg, borderBottom: `1px solid ${U.border}`,
+          backdropFilter: "blur(20px)", flexShrink: 0, padding: isMobile ? "0 10px" : "0 22px", position: "relative", zIndex: 5
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, paddingTop: isMobile ? 10 : 14, paddingBottom: isMobile ? 8 : 12 }}>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           style={{
@@ -51,18 +51,16 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
         >
           {sidebarOpen ? <X size={13} color={U.textDim} /> : <Menu size={13} color={U.textDim} />}
         </button>
-        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
           <h1 style={{
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             margin: 0, fontSize: "var(--header-title-s)" as any, fontWeight: 700, color: U.text,
             letterSpacing: "-0.025em", lineHeight: 1.2
           }}>{activeNav.label}</h1>
-          <div style={{
+          {!isMobile && <div style={{
             fontSize: 12, color: U.textMute, marginTop: 2,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            visibility: "var(--header-sub-vis)" as any,
-          }}>{sub}</div>
+          }}>{sub}</div>}
         </div>
         <div style={{ display: "flex", gap: 7, flexShrink: 0, alignItems: "center" }}>
           {isMobile ? (
@@ -110,7 +108,13 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
           </Link>
 
           <Link href="/settings">
-            <Btn variant={pathname === "/settings" ? "cyan" : "glass"} size="md"><Settings size={13} /> Settings</Btn>
+            {isMobile ? (
+              <button style={{ width: 36, height: 36, borderRadius: 10, background: U.glass, backdropFilter: "blur(24px) saturate(150%)", border: `1px solid ${U.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                <Settings size={14} color={pathname === "/settings" ? U.cyan : U.textDim} />
+              </button>
+            ) : (
+              <Btn variant={pathname === "/settings" ? "cyan" : "glass"} size="md"><Settings size={13} /> Settings</Btn>
+            )}
           </Link>
         </div>
       </div>

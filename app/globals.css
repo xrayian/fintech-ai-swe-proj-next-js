@@ -59,7 +59,6 @@
   --copilot-pb: 0px;
   --bottom-nav-h: 0px;
   --ticker-h: 36px;
-  --header-sub-vis: visible;
   --header-title-s: 18px;
   --toast-bottom: 20px;
   --col-dir: row;
@@ -98,7 +97,6 @@
     --copilot-pb: 56px;
     --bottom-nav-h: 56px;
     --ticker-h: 0px;
-    --header-sub-vis: hidden;
     --header-title-s: 14px;
     --toast-bottom: 76px;
     --col-dir: column;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AmbientBg } from '@/components/layout/ambient-bg';
@@ -14,6 +14,9 @@ import { U } from '@/lib/constants';
 import { useResponsive } from '@/hooks/use-responsive';
 import { SupportChat } from '@/components/shared/support-chat';
 import "./globals.css";
+
+const BOTTOM_NAV_IDS = new Set(["dashboard", "technical", "copilot", "compare", "news"]);
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -23,6 +26,10 @@ export default function RootLayout({
   const pathname = usePathname();
   const isCopilot = pathname === '/copilot';
   const { isMobile } = useResponsive();
+
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(false);
+  }, [isMobile]);
 
   return (
     <html lang="en">
@@ -58,9 +65,9 @@ export default function RootLayout({
                   WebkitBackdropFilter: "blur(30px) saturate(160%)",
                   borderTop: `1px solid ${U.border}`,
                   display: "flex", alignItems: "center", justifyContent: "space-around",
-                  zIndex: 100,
+                  padding: "0 4px", zIndex: 100,
                 }}>
-                  {NAV.map(({ id, mobileLabel, icon: Icon, href }) => {
+                  {NAV.filter(n => BOTTOM_NAV_IDS.has(n.id)).map(({ id, mobileLabel, icon: Icon, href }) => {
                     const act = pathname === href || (pathname === '/' && id === 'dashboard');
                     return (
                       <Link key={id} href={href} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '6px 0', flex: 1, minWidth: 44 }}>

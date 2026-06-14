@@ -79,9 +79,9 @@ function computeIndicators(candles: { open: number; high: number; low: number; c
   };
 }
 
-export default function TechnicalSuite() {
+export default function TechnicalSuite({ initialSymbol }: { initialSymbol?: string }) {
   const { watchlist } = useWatchlist();
-  const [sel, setSel] = useState(() => watchlist[0]?.sym || "AAPL");
+  const [sel, setSel] = useState(() => initialSymbol || watchlist[0]?.sym || "AAPL");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{ sym: string; name: string }[]>([]);

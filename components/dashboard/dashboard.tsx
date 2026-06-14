@@ -109,7 +109,8 @@ export default function Dashboard() {
   }, []);
 
   const liveVals = Object.values(live);
-  const hasLive = liveVals.length > 0;
+  const liveWithData = liveVals.filter(t => t.price > 0);
+  const hasLiveData = liveWithData.length > 0;
 
   const kpiDefs = [
     { label: "Total Market Cap", value: kpis?.marketCap, accent: U.cyan },
@@ -142,10 +143,10 @@ export default function Dashboard() {
         <GlassCard style={{ padding: "16px 18px" }}>
           <SectionTitle icon={Activity}>Top Movers</SectionTitle>
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            {!hasLive ? (
+            {!hasLiveData ? (
               Array.from({ length: 5 }).map((_, i) => <MoverSkeleton key={i} />)
             ) : (
-              liveVals.sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct)).slice(0, 6).map(t => {
+              liveWithData.sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct)).slice(0, 6).map(t => {
                 const l = live[t.sym] || t;
                 const up = l.pct >= 0;
                 return (

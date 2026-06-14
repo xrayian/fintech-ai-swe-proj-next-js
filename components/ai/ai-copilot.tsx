@@ -22,9 +22,9 @@ type Message = {
 
 const AI_INIT: Message[] = [{ role: "assistant", content: "**Welcome.** I'm your AI Copilot for market intelligence. I can analyze stocks using live fundamental data — ask about valuations, compare tickers, or explore market sectors.\n\n**Try asking:**\n- *\"Is AAPL wise to invest now?\"*\n- *\"Compare MSFT vs GOOGL\"*\n- *\"What's the risk on TSLA?\"*" }];
 
-export default function AICopilot() {
+export default function AICopilot({ initialSymbol }: { initialSymbol?: string }) {
   const { isMobile } = useResponsive();
-  const [view, setView] = useState<'chat' | 'scores'>('chat');
+  const [view, setView] = useState<'chat' | 'scores'>(initialSymbol ? 'scores' : 'chat');
   const [msgs, sm] = useState<Message[]>(AI_INIT);
   const [inp, si] = useState("");
   const [loading, sl] = useState(false);
@@ -34,6 +34,7 @@ export default function AICopilot() {
   const { query: searchQuery, setQuery: setSearchQuery, results: searchResults, loading: searching, clear: clearSearch } = useSymbolSearch();
   const [loadingSymbols, setLoadingSymbols] = useState<Set<string>>(new Set());
   const [fundamentalsMap, setFundamentalsMap] = useState<Record<string, NormalizedFundamentals>>({});
+  const [fundamentalsLoading, setFundamentalsLoading] = useState(true);
   const bot = useRef<HTMLDivElement>(null);
   const inpRef = useRef<HTMLTextAreaElement>(null);
 
@@ -47,7 +48,8 @@ export default function AICopilot() {
         }
         if (Object.keys(map).length > 0) setFundamentalsMap(map);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setFundamentalsLoading(false));
   }, []);
 
 
@@ -65,6 +67,10 @@ export default function AICopilot() {
       setLoadingSymbols(p => { const n = new Set(p); n.delete(sym); return n; });
     }
   }, [fundamentalsMap]);
+
+  useEffect(() => {
+    if (initialSymbol) loadSymbol(initialSymbol);
+  }, [initialSymbol, loadSymbol]);
 
   const scorecardMap = useMemo(() => {
     const map: Record<string, ScorecardData> = {};
@@ -166,6 +172,41 @@ export default function AICopilot() {
     .replace(/\n/g, "<br/>")
     .replace(/^- (.+)/gm, `<span style="display:flex;gap:6px;padding:2px 0"><span style="color:${U.cyan};flex-shrink:0">\u203A</span><span>$1</span></span>`);
 
+function ScoreCardSkeleton() {
+  return (
+    <div style={{
+      marginBottom: 8, borderRadius: 12,
+      background: U.cardBg, border: U.cardBorder, overflow: "hidden",
+      backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+    }}>
+      <div style={{ padding: 16, display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{
+          width: 50, height: 50, borderRadius: 12,
+          background: `linear-gradient(90deg,${U.glassLo},${U.glassHi},${U.glassLo})`,
+          backgroundSize: "200% 100%", animation: "shimmer 1.5s ease infinite",
+        }} />
+        <div style={{ flex: 1 }}>
+          <div style={{
+            height: 14, width: "30%", borderRadius: 4, marginBottom: 6,
+            background: `linear-gradient(90deg,${U.glassLo},${U.glassHi},${U.glassLo})`,
+            backgroundSize: "200% 100%", animation: "shimmer 1.5s ease infinite 200ms",
+          }} />
+          <div style={{
+            height: 10, width: "45%", borderRadius: 4,
+            background: `linear-gradient(90deg,${U.glassLo},${U.glassHi},${U.glassLo})`,
+            backgroundSize: "200% 100%", animation: "shimmer 1.5s ease infinite 400ms",
+          }} />
+        </div>
+        <div style={{
+          height: 10, width: 60, borderRadius: 4,
+          background: `linear-gradient(90deg,${U.glassLo},${U.glassHi},${U.glassLo})`,
+          backgroundSize: "200% 100%", animation: "shimmer 1.5s ease infinite 300ms",
+        }} />
+      </div>
+    </div>
+  );
+}
+
   const scoresPanel = (
     <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
       <div style={{ padding: isMobile ? "10px 14px" : "14px 18px", borderBottom: `1px solid ${U.border}`, flexShrink: 0 }}>
@@ -211,6 +252,8 @@ export default function AICopilot() {
               }}
             />
           </>
+        ) : fundamentalsLoading ? (
+          Array.from({ length: 8 }).map((_, i) => <ScoreCardSkeleton key={i} />)
         ) : (
           Object.entries(scorecardMap).map(([sym, d]) => (
             <ScoreCard key={sym} ticker={sym} data={d} expanded={exp === sym} onToggle={() => se(exp === sym ? null : sym)} />

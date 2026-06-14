@@ -6,6 +6,7 @@ import {
   ResponsiveContainer, Cell
 } from "recharts";
 import { U, fmt } from '@/lib/constants';
+import { useResponsive } from '@/hooks/use-responsive';
 
 interface CandleChartProps {
   data: any[];
@@ -53,6 +54,8 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export function CandleChart({ data, loading }: CandleChartProps) {
+  const { isMobile } = useResponsive();
+
   if (!data.length) {
     return (
       <div style={{ height: 340, display: 'flex', alignItems: 'center', justifyContent: 'center', color: U.textMute }}>
@@ -65,6 +68,9 @@ export function CandleChart({ data, loading }: CandleChartProps) {
   const minP = Math.min(...prices) - 5, maxP = Math.max(...prices) + 5;
   const last = data[data.length - 1], up = last.close >= last.open;
   const enriched = data.map(d => ({ ...d, mid: (d.open + d.close) / 2, minP, maxP }));
+
+  const candleGap = isMobile ? 28 : 0;
+  const scrollW = isMobile ? Math.max(data.length * candleGap, 320) : undefined;
 
   return (
     <div>
@@ -87,29 +93,33 @@ export function CandleChart({ data, loading }: CandleChartProps) {
           ))}
         </div>
       </div>
-      <ResponsiveContainer width="100%" height={240}>
-        <ComposedChart data={enriched} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-          <CartesianGrid strokeDasharray="2 4" stroke={U.border} vertical={false} />
-          <XAxis dataKey="date" tick={{ fill: U.textMute, fontSize: 10, fontFamily: 'JetBrains Mono' }} tickLine={false} axisLine={false} interval={9} />
-          <YAxis domain={[minP, maxP]} tick={{ fill: U.textMute, fontSize: 10, fontFamily: 'JetBrains Mono' }} tickLine={false} axisLine={false} width={48} tickFormatter={v => `$${v}`} />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: U.glassLo }} />
-          <Bar dataKey="mid" isAnimationActive={false} shape={(p: any) => <CandleShape {...p} minP={minP} maxP={maxP} />} />
-        </ComposedChart>
-      </ResponsiveContainer>
-      <div style={{
-        fontSize: 10, fontWeight: 600, color: U.textMute, textTransform: "uppercase",
-        letterSpacing: "0.14em", borderTop: `1px solid ${U.border}`, paddingTop: 10, marginTop: 10
-      }}>
-        Volume
+      <div style={isMobile ? { overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 4 } : {}}>
+        <div style={isMobile ? { width: scrollW } : {}}>
+          <ResponsiveContainer width={isMobile ? scrollW! : "100%"} height={240}>
+            <ComposedChart data={enriched} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+              <CartesianGrid strokeDasharray="2 4" stroke={U.border} vertical={false} />
+              <XAxis dataKey="date" tick={{ fill: U.textMute, fontSize: 10, fontFamily: 'JetBrains Mono' }} tickLine={false} axisLine={false} interval={isMobile ? Math.max(1, Math.floor(data.length / 8)) : 9} />
+              <YAxis domain={[minP, maxP]} tick={{ fill: U.textMute, fontSize: 10, fontFamily: 'JetBrains Mono' }} tickLine={false} axisLine={false} width={48} tickFormatter={v => `$${v}`} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: U.glassLo }} />
+              <Bar dataKey="mid" isAnimationActive={false} shape={(p: any) => <CandleShape {...p} minP={minP} maxP={maxP} />} />
+            </ComposedChart>
+          </ResponsiveContainer>
+          <div style={{
+            fontSize: 10, fontWeight: 600, color: U.textMute, textTransform: "uppercase",
+            letterSpacing: "0.14em", borderTop: `1px solid ${U.border}`, paddingTop: 10, marginTop: 10
+          }}>
+            Volume
+          </div>
+          <ResponsiveContainer width={isMobile ? scrollW! : "100%"} height={58}>
+            <ComposedChart data={enriched} margin={{ top: 0, right: 4, bottom: 0, left: 0 }}>
+              <XAxis dataKey="date" hide /><YAxis hide />
+              <Bar dataKey="volume" isAnimationActive={false} radius={[2, 2, 0, 0]}>
+                {enriched.map((e, i) => <Cell key={i} fill={e.bullish ? U.emeraldSoft : U.roseSoft} />)}
+              </Bar>
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
       </div>
-      <ResponsiveContainer width="100%" height={58}>
-        <ComposedChart data={enriched} margin={{ top: 0, right: 4, bottom: 0, left: 0 }}>
-          <XAxis dataKey="date" hide /><YAxis hide />
-          <Bar dataKey="volume" isAnimationActive={false} radius={[2, 2, 0, 0]}>
-            {enriched.map((e, i) => <Cell key={i} fill={e.bullish ? U.emeraldSoft : U.roseSoft} />)}
-          </Bar>
-        </ComposedChart>
-      </ResponsiveContainer>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
-import { Search as SearchIcon, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { Search as SearchIcon, Loader2, TrendingUp } from 'lucide-react';
 import { U } from '@/lib/constants';
 import { GlassCard } from '@/components/shared/glass-card';
 import { ErrorMessage } from '@/components/shared/error-message';
@@ -58,7 +59,12 @@ export default function SearchPage() {
           <div style={{ fontSize: 12, color: U.textMute, lineHeight: 1.6 }}>Type a ticker or company name to find fundamentals, charts, and AI analysis.</div>
           <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginTop: 16 }}>
             {watchlist.slice(0, 12).map(t => (
-              <span key={t.sym} style={{ background: U.glassLo, color: U.textDim, padding: "4px 12px", borderRadius: 999, fontSize: 11, fontWeight: 600, border: `1px solid ${U.border}` }}>{t.sym}</span>
+              <Link key={t.sym} href={`/technical?symbol=${t.sym}`} style={{ textDecoration: "none" }}>
+                <span style={{ background: U.glassLo, color: U.textDim, padding: "4px 12px", borderRadius: 999, fontSize: 11, fontWeight: 600, border: `1px solid ${U.border}`, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, transition: "all .15s" }}
+                  onMouseEnter={e => { e.currentTarget.style.background = U.cyanSoft; e.currentTarget.style.color = U.cyan; e.currentTarget.style.borderColor = U.cyan; e.currentTarget.style.borderColor = `${U.cyan}55`; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = U.glassLo; e.currentTarget.style.color = U.textDim; e.currentTarget.style.borderColor = U.border; }}
+                ><TrendingUp size={10} /> {t.sym}</span>
+              </Link>
             ))}
           </div>
         </GlassCard>
